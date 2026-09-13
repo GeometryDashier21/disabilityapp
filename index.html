@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#162a3a" />
+    <title>OpenPath | Everyday support</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="OpenPath home">
+          <span class="brand-mark" aria-hidden="true">+</span>
+          <span><strong>OpenPath</strong><small>everyday support, your way</small></span>
+        </a>
+        <button class="voice-button" id="voiceButton" type="button" aria-label="Start voice control">
+          <span class="voice-dot" aria-hidden="true"></span><span>Voice control</span>
+        </button>
+      </header>
+
+      <main id="top">
+        <section class="welcome-section" aria-labelledby="pageTitle">
+          <div>
+            <p class="eyebrow">A calmer way through the day</p>
+            <h1 id="pageTitle">Choose the kind of support you need.</h1>
+            <p class="intro">Open a mode, then choose one focused tool. Everything stays close, clear, and ready when you are.</p>
+          </div>
+          <div class="today-note"><span class="sun-mark" aria-hidden="true">/</span><span><strong id="dateLabel">Today</strong><small>Your tools are saved on this device.</small></span></div>
+        </section>
+
+        <nav class="mode-navigation" aria-label="Support modes">
+          <button class="mode-button is-active" data-mode="cognitive" type="button"><span class="mode-number">01</span><span><strong>Cognitive</strong><small>mind, memory, routines</small></span><span class="arrow" aria-hidden="true">&rarr;</span></button>
+          <button class="mode-button" data-mode="motor" type="button"><span class="mode-number">02</span><span><strong>Motor</strong><small>movement, access, control</small></span><span class="arrow" aria-hidden="true">&rarr;</span></button>
+          <button class="mode-button" data-mode="speech" type="button"><span class="mode-number">03</span><span><strong>Speech</strong><small>communicate, practice, connect</small></span><span class="arrow" aria-hidden="true">&rarr;</span></button>
+        </nav>
+
+        <section class="workspace" aria-live="polite">
+          <aside class="feature-sidebar">
+            <div class="sidebar-heading"><p class="eyebrow">Your tools</p><h2 id="modeTitle">Cognitive mode</h2></div>
+            <div id="featureList" class="feature-list"></div>
+            <p class="sidebar-help">Each tool opens independently. You can come back here anytime.</p>
+          </aside>
+          <section class="feature-content" id="featureContent"></section>
+        </section>
+      </main>
+
+      <footer><span>OpenPath is a support tool, not a replacement for professional medical advice.</span><span>Built for choice and independence.</span></footer>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
