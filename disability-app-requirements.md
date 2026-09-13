@@ -126,3 +126,11 @@ The app will initially support needs associated with these categories:
 - Lessons should support step-by-step practice at a pace chosen by the user.
 - The exact mouth-formation visuals, lesson content, word library, progression, and feedback methods are to be defined.
 
+## Technical Considerations
+
+### Deployment & Hosting
+
+- The application is a static client-side web application built with HTML, CSS, and JavaScript.
+- The web application is hosted using GitHub Pages directly from the `main` branch root folder (`/`).
+- GitHub Pages automatically serves `index.html` as the main entry point.
+
