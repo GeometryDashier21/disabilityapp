@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-People with disabilities may need different tools and forms of support to make everyday tasks easier. A single app should provide accessible assistance tailored to the user's needs instead of assuming that one experience works for everyone.
+The application, named Disability App, will provide people with disabilities different tools and forms of support to make everyday tasks easier. A single app should provide accessible assistance tailored to the user's needs instead of assuming that one experience works for everyone.
 
 ## Goals
 
@@ -59,7 +59,22 @@ The app will initially support needs associated with these categories:
 - The app will provide games designed to exercise cognitive skills.
 - Games will help users practice skills that may not have been learned or developed previously.
 - Games should present learning and practice in an engaging, supportive format.
-- Game types, target skills, difficulty progression, accessibility controls, and the boundaries of any brain-training claims are to be defined.
+- Cognitive Skills Games will provide two separate game buttons: Number Memory and Item Recall.
+- Only the game selected by the user will be displayed, and the user can switch between the two games by selecting the other button.
+- The first game will be a number memory game that starts each round by showing a random sequence of four numbers as large, bubble-style number tiles.
+- When the user begins typing their answer, the number sequence will disappear so the user recalls it from memory.
+- A correctly completed sequence advances the next round by one number, starting at four numbers and continuing with five, six, seven, and higher.
+- An incorrect sequence resets the game to a new sequence of four numbers.
+- The game will give clear, supportive feedback after each attempt and let the user begin a new round.
+- The next game will be an item-recall game that displays a chest containing approximately 10 varied, randomly selected items from a broad item bank.
+- The chest and its items will remain visible for 30 seconds, with a bubble-style countdown displayed beside the chest.
+- While the chest is open, the item-recall text box will remain hidden so the user cannot enter answers during the study period.
+- When the 30-second countdown ends, the chest and its items will disappear and the text box will appear for item recall.
+- The user will enter one item at a time and press Enter to submit each answer.
+- Each correctly recalled item will allow the user to enter another item, and the game will count correct answers out of 10.
+- If the user submits an item that is not in the chest, the round will end immediately and display a Game Over screen.
+- The user will be able to start a new item-recall round using the Start Game button.
+- Additional game types, target skills, accessibility controls, and the boundaries of any brain-training claims are to be defined.
 
 #### Mood Check-In And Coping Exercises
 
