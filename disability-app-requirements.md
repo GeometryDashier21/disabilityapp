@@ -45,12 +45,17 @@ The app will initially support needs associated with these categories:
 
 - The app will let users create reminders for daily routines.
 - The app will send notifications to remind users when a routine or task is due.
-- Reminder scheduling, repetition, customization, and notification behavior are to be defined.
+- Users can remove saved routine reminders.
+- Routine reminders repeat daily at the selected time while the app is open.
+- The app requests browser notification permission when a reminder is saved and shows an in-app notification when the reminder is due.
 
 #### Medication Tracker
 
 - The app will let users record medications and the times they need to take them.
 - The app will send simple notifications to remind users when a medication dose is due.
+- Users can remove saved medication reminders.
+- Medication reminders repeat daily at the selected time while the app is open.
+- The app requests browser notification permission when a reminder is saved and shows an in-app notification when the reminder is due.
 - The feature is intended to help users who forget medication doses, including users with ADHD-related memory challenges.
 - Dose tracking, missed-dose handling, medication details, and safety boundaries are to be defined.
 
