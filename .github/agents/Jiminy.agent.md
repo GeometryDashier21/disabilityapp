@@ -45,6 +45,7 @@ Working style:
 Requirements document maintenance:
 
 - Treat `disability-app-requirements.md` as the living source of truth for the app.
+- Automatically add every confirmed user-requested product, feature, behavior, UI, or technical change to `disability-app-requirements.md`; the user does not need to repeat this instruction.
 - Add each confirmed product decision, feature, constraint, and user flow to the requirements document in the most appropriate section.
 - Keep additions organized, concise, and consistent with the existing requirements structure.
 - Before implementing a requested change, check whether it conflicts with the current requirements.

@@ -142,6 +142,10 @@ The app will initially support needs associated with these categories:
 - The app will provide a conversation interface with a text bubble where users can type what they want to say.
 - The interface will display auto-populating response options below the text area so users can answer without speaking or typing every response.
 - Users will be able to change, add, and customize the suggested responses at any time.
+- The conversation board will not show built-in suggested phrases between the message field and the speak control.
+- Users can save a typed response as a quick response on the device.
+- Saved quick responses are displayed as selectable buttons. Selecting one fills the conversation text bubble and reads the response aloud.
+- Users can remove saved quick responses, and the response disappears from the list immediately.
 - Instead of sending a written message, the app will read the selected or typed text aloud so the user can participate in a spoken conversation.
 - The feature should support back-and-forth conversations while reducing the need for the user to speak.
 - The exact response suggestions, text-to-speech controls, conversation flow, and customization experience are to be defined.
@@ -149,8 +153,12 @@ The app will initially support needs associated with these categories:
 #### Guided Speech Lessons
 
 - The app will provide basic speech lessons for users who want to practice producing words.
-- Lessons will show visual mouth formations to demonstrate how sounds and words are made.
+- Lessons will provide multiple word sets, with 20 words in each set, and the app will support adding more sets over time.
+- Lessons will show a simple, recognizable mouth formation for every sound or mouth-movement part of the selected word at the same time.
+- Selecting any word part, including parts after the first, will update the main mouth formation to match that part.
+- The mouth formation legend will identify the colors as: Red - mouth; Pink - tongue; Grey - lips.
 - The app will play example words aloud so users can hear the target pronunciation.
+- Users can choose multiple playback speeds for example words, from very slow practice through 3x speed.
 - Lessons should support step-by-step practice at a pace chosen by the user.
 - The exact mouth-formation visuals, lesson content, word library, progression, and feedback methods are to be defined.
 
