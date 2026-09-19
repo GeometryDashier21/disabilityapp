@@ -48,6 +48,8 @@ The app will initially support needs associated with these categories:
 - Users can remove saved routine reminders.
 - Routine reminders repeat daily at the selected time while the app is open.
 - The app requests browser notification permission when a reminder is saved and shows an in-app notification when the reminder is due.
+- Due reminders play an in-app alarm sound instead of relying on the default system notification sound.
+- The alarm repeats every few seconds and shows a dismiss banner until the user dismisses it or a safety timeout is reached, so a reminder is not missed after only a few beeps.
 
 #### Medication Tracker
 
@@ -56,6 +58,9 @@ The app will initially support needs associated with these categories:
 - Users can remove saved medication reminders.
 - Medication reminders repeat daily at the selected time while the app is open.
 - The app requests browser notification permission when a reminder is saved and shows an in-app notification when the reminder is due.
+- Due medication reminders play an in-app alarm sound instead of relying on the default system notification sound.
+- The alarm repeats every few seconds and shows a dismiss banner until the user dismisses it or a safety timeout is reached, so a reminder is not missed after only a few beeps.
+- Due medication notifications include the dose note alongside the medication name.
 - The feature is intended to help users who forget medication doses, including users with ADHD-related memory challenges.
 - Dose tracking, missed-dose handling, medication details, and safety boundaries are to be defined.
 
