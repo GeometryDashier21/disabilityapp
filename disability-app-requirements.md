@@ -90,7 +90,10 @@ The app will initially support needs associated with these categories:
 
 - The app will send scheduled check-ins at user-defined intervals to ask how the user is feeling.
 - Users will be able to respond with a mood or emotional state that reflects how they are feeling.
+- The mood check-in offers these mood options: happy, sad, calm, overwhelmed, tired, angry, stressed, excited, and nervous.
 - Based on the response, the app will suggest exercises or actions intended to help the user feel better or stay better.
+- Each mood draws from a large, locally generated pool of suggestion combinations (well beyond a handful of fixed options) so repeated check-ins for the same mood feel varied rather than repetitive, without requiring an external AI service.
+- Selecting the same mood again shows a different suggestion each time until the full pool has been shown, then the pool reshuffles.
 - The feature should be supportive, not critical, and should allow the user to choose their own pace.
 - The exact interval options, mood categories, exercise library, and response logic are to be defined.
 
