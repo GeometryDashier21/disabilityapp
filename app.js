@@ -28,6 +28,31 @@ const modes = {
   },
 };
 
+// Shared stick-figure rig used to animate each individual stretch. Groups are nested so a
+// rotation on a parent joint (e.g. shoulder) carries its children (elbow, hand) with it.
+// Builds one stick-figure instance with unique element ids (suffix) so several suggestions can render their own independent animation at once.
+function stickFigureSvg(suffix) {
+  const id = (name) => `fig-${suffix}-${name}`;
+  return '<svg class="stick-figure" viewBox="0 0 200 260" aria-hidden="true">'
+    + '<line x1="14" y1="252" x2="186" y2="252" stroke="#d9d4ca" stroke-width="6" stroke-linecap="round"/>'
+    + `<g id="${id('root')}">`
+    + `<g id="${id('hipL')}"><line x1="100" y1="150" x2="85" y2="195" stroke="#162a3a" stroke-width="6" stroke-linecap="round"/>`
+    + `<g id="${id('kneeL')}"><line x1="85" y1="195" x2="80" y2="240" stroke="#162a3a" stroke-width="6" stroke-linecap="round"/>`
+    + `<g id="${id('footL')}"><line x1="80" y1="240" x2="63" y2="245" stroke="#162a3a" stroke-width="6" stroke-linecap="round"/></g></g></g>`
+    + `<g id="${id('hipR')}"><line x1="100" y1="150" x2="115" y2="195" stroke="#162a3a" stroke-width="6" stroke-linecap="round"/>`
+    + `<g id="${id('kneeR')}"><line x1="115" y1="195" x2="120" y2="240" stroke="#162a3a" stroke-width="6" stroke-linecap="round"/>`
+    + `<g id="${id('footR')}"><line x1="120" y1="240" x2="137" y2="245" stroke="#162a3a" stroke-width="6" stroke-linecap="round"/></g></g></g>`
+    + `<g id="${id('torso')}"><line x1="100" y1="150" x2="100" y2="58" stroke="#162a3a" stroke-width="7" stroke-linecap="round"/>`
+    + `<g id="${id('head-group')}"><circle cx="100" cy="40" r="16" fill="#e2735b"/></g>`
+    + `<g id="${id('shoulderL')}"><line x1="100" y1="70" x2="72" y2="95" stroke="#167d78" stroke-width="6" stroke-linecap="round"/>`
+    + `<g id="${id('elbowL')}"><line x1="72" y1="95" x2="58" y2="125" stroke="#167d78" stroke-width="6" stroke-linecap="round"/>`
+    + `<g id="${id('handL')}"><circle cx="58" cy="125" r="7" fill="#167d78"/></g></g></g>`
+    + `<g id="${id('shoulderR')}"><line x1="100" y1="70" x2="128" y2="95" stroke="#167d78" stroke-width="6" stroke-linecap="round"/>`
+    + `<g id="${id('elbowR')}"><line x1="128" y1="95" x2="142" y2="125" stroke="#167d78" stroke-width="6" stroke-linecap="round"/>`
+    + `<g id="${id('handR')}"><circle cx="142" cy="125" r="7" fill="#167d78"/></g></g></g>`
+    + '</g></g></svg>';
+}
+
 const speechLessonSets = [
   { name: 'Everyday words', words: [['Mango', ['m', 'an', 'go']], ['Morning', ['m', 'or', 'n', 'ing']], ['Maybe', ['m', 'ay', 'be']], ['Map', ['m', 'a', 'p']], ['Banana', ['b', 'a', 'n', 'a', 'na']], ['Paper', ['p', 'a', 'per']], ['Baby', ['b', 'ay', 'be']], ['Happy', ['h', 'a', 'p', 'py']], ['Window', ['w', 'in', 'do']], ['Water', ['w', 'a', 'ter']], ['Open', ['o', 'pen']], ['Apple', ['a', 'p', 'ple']], ['Orange', ['or', 'an', 'ge']], ['Cookie', ['c', 'oo', 'kie']], ['Coffee', ['c', 'of', 'fee']], ['Pillow', ['p', 'il', 'low']], ['Flower', ['fl', 'ow', 'er']], ['Lemon', ['le', 'm', 'on']], ['Music', ['mu', 'sic']], ['Garden', ['gar', 'den']]] },
   { name: 'Helpful phrases', words: [['Hello', ['he', 'l', 'lo']], ['Thank you', ['th', 'ank', 'you']], ['Please', ['p', 'lea', 'se']], ['Sorry', ['sor', 'ry']], ['Welcome', ['wel', 'come']], ['Ready', ['r', 'ea', 'dy']], ['Listen', ['lis', 'ten']], ['Again', ['a', 'gain']], ['Slowly', ['s', 'low', 'ly']], ['Together', ['to', 'ge', 'ther']], ['Friend', ['fr', 'iend']], ['Family', ['fam', 'i', 'ly']], ['Support', ['sup', 'port']], ['Question', ['ques', 'tion']], ['Answer', ['an', 'swer']], ['Comfort', ['com', 'fort']], ['Careful', ['care', 'ful']], ['Patient', ['pa', 'tient']], ['Practice', ['prac', 'tice']], ['Conversation', ['con', 'ver', 'sa', 'tion']]] },
@@ -43,9 +68,9 @@ const featureContent = {
   meds: { kicker: 'Cognitive mode / 03', title: 'A gentle nudge for medication.', lede: 'Track a medication and its scheduled time. This tool supports memory; it does not replace advice from a doctor or pharmacist.', body: '<form class="form-stack" id="medForm"><label class="field-label">Medication name<input name="name" required placeholder="Medication name" /></label><label class="field-label">Dose note<input name="dose" placeholder="Optional dose or instruction" /></label><label class="field-label">Reminder time<input name="time" type="time" required /></label><button class="primary-button" type="submit">Save medication reminder</button></form><div class="results" id="medResults"></div>' },
   games: { kicker: 'Cognitive mode / 04', title: 'Practice a skill, one round at a time.', lede: 'Choose a memory game to practice. This is practice, not a medical assessment.', body: '<div class="game-selector" role="group" aria-label="Choose a cognitive game"><button class="choice-button" data-game="number" type="button">Number memory</button><button class="choice-button" data-game="items" type="button">Item recall</button></div><div class="tool-card memory-game" id="numberGame" hidden><div class="memory-game-heading"><h4>Number memory</h4><span id="gameLevel">4 numbers</span></div><p id="gamePrompt">Press start to see your first sequence.</p><div class="number-sequence" id="gameSequence" aria-live="polite"></div><label class="field-label memory-answer" for="gameAnswer">Type the numbers in order<input id="gameAnswer" type="text" inputmode="numeric" autocomplete="off" disabled /></label><div class="action-row"><button class="primary-button" data-action="start-game" type="button">Start game</button></div><p id="gameResult" aria-live="polite"></p></div><div class="tool-card item-game" id="itemGame" hidden><div class="memory-game-heading"><h4>Item recall</h4><span id="itemScore">0 / 10 correct</span></div><p id="itemPrompt">Press start to open the chest and study the items.</p><div class="item-display" id="itemDisplay"><div class="item-chest" aria-hidden="true">&#128081;</div><div class="item-countdown" id="itemCountdown">30</div><ul class="item-list" id="itemList"></ul></div><div class="item-game-over" id="itemGameOver" hidden><strong>Game Over</strong><span>That item was not in the chest.</span></div><form class="form-stack item-answer" id="itemRecallForm" hidden><label class="field-label" for="itemAnswer">Name an item you remember<input id="itemAnswer" type="text" autocomplete="off" /></label><button class="primary-button" type="submit">Submit item</button></form><div class="action-row"><button class="primary-button" data-action="start-items" type="button">Start game</button></div><p id="itemResult" aria-live="polite"></p></div>' },
   mood: { kicker: 'Cognitive mode / 05', title: 'Check in with yourself.', lede: 'Choose the feeling that is closest right now. Each time you pick it, you will get a different small, optional exercise to support your next moment.', body: '<div class="choice-grid" id="moodChoices"><button class="choice-button" data-mood="happy" type="button">Happy</button><button class="choice-button" data-mood="sad" type="button">Sad</button><button class="choice-button" data-mood="calm" type="button">Calm</button><button class="choice-button" data-mood="overwhelmed" type="button">Overwhelmed</button><button class="choice-button" data-mood="tired" type="button">Tired</button><button class="choice-button" data-mood="angry" type="button">Angry</button><button class="choice-button" data-mood="stressed" type="button">Stressed</button><button class="choice-button" data-mood="excited" type="button">Excited</button><button class="choice-button" data-mood="nervous" type="button">Nervous</button></div><div class="tool-card" id="moodResult" hidden><h4>Your small next step</h4><p></p></div>' },
-  body: { kicker: 'Motor mode / 01', title: 'Tell us what your body needs today.', lede: 'Choose every area that feels less comfortable and every area that feels strong. Your selections shape a gentle mobility suggestion.', body: '<div class="choice-grid" id="bodyChoices"><button class="choice-button" data-body="Shoulders" type="button">Shoulders</button><button class="choice-button" data-body="Hands" type="button">Hands</button><button class="choice-button" data-body="Hips" type="button">Hips</button><button class="choice-button" data-body="Knees" type="button">Knees</button><button class="choice-button" data-body="Back" type="button">Back</button><button class="choice-button" data-body="Ankles" type="button">Ankles</button></div><button class="primary-button" data-action="mobility" type="button">Suggest mobility support</button><div class="tool-card" id="mobilityResult" hidden><h4>Gentle starting point</h4><p></p></div>' },
+  body: { kicker: 'Motor mode / 01', title: 'Tell us what your body needs today.', lede: 'Choose every area that feels less comfortable and every area that feels strong. Each pick draws a different real exercise or stretch from a varied pool, so it will not repeat the same suggestion each time.', body: '<div class="choice-grid" id="bodyChoices"><button class="choice-button" data-body="Neck" type="button">Neck</button><button class="choice-button" data-body="Shoulders" type="button">Shoulders</button><button class="choice-button" data-body="Elbows" type="button">Elbows</button><button class="choice-button" data-body="Wrists" type="button">Wrists</button><button class="choice-button" data-body="Hands" type="button">Hands</button><button class="choice-button" data-body="Back" type="button">Back</button><button class="choice-button" data-body="Hips" type="button">Hips</button><button class="choice-button" data-body="Knees" type="button">Knees</button><button class="choice-button" data-body="Ankles" type="button">Ankles</button><button class="choice-button" data-body="Feet" type="button">Feet</button></div><button class="primary-button" data-action="mobility" type="button">Suggest mobility support</button><div class="tool-card" id="mobilityResult" hidden><h4>Your suggested stretch</h4><div class="mobility-cards" id="mobilityCards"></div></div>' },
   physical: { kicker: 'Motor mode / 02', title: 'Know what access looks like before you go.', lede: 'Browse a sample physical-accessibility signal. In the full product, this can be connected to verified place information.', body: '<div class="results"><div class="result"><span><strong>Riverside Library</strong><small>Step-free entrance, wide aisles, accessible restroom</small></span><strong>Good access</strong></div><div class="result" style="border-color:var(--yellow)"><span><strong>Juniper Market</strong><small>Ground-level entrance, limited seating</small></span><strong>Check details</strong></div></div>' },
-  large: { kicker: 'Motor mode / 03', title: 'More room. More control.', lede: 'Motor Mode is designed with bigger targets and more separation for people with tremors or reduced fine motor control.', body: '<div class="tool-card"><h4>Large touch layout</h4><p>This prototype keeps the expanded layout active while you browse. The persistent voice button is also available at the top of the page.</p><div class="meter"><span></span></div><p>Touch target size: expanded</p></div>' },
+  large: { kicker: 'Motor mode / 03', title: 'More room. More control.', lede: 'Motor Mode is designed with bigger targets and more separation for people with tremors or reduced fine motor control.', body: '<div class="tool-card"><h4>Large touch layout</h4><p>Drag the slider to make every button and control across the app bigger or smaller. Your choice is saved on this device.</p><div class="touch-scale-control"><input id="touchScaleSlider" type="range" min="100" max="160" step="10" /><div class="meter"><span id="touchScaleMeter"></span></div><p id="touchScaleLabel"></p></div></div>' },
   voice: { kicker: 'Motor mode / 04', title: 'Use your voice when touch is hard.', lede: 'The voice button stays at the top of the app. Try it now, or use the button below to test browser voice recognition.', body: '<div class="tool-card"><h4>Voice control</h4><p>Say “open cognitive mode”, “open motor mode”, or “open speech mode” where browser support is available.</p><div class="action-row"><button class="primary-button" data-action="listen" type="button">Start listening</button></div></div>' },
   speechPlaces: { kicker: 'Speech mode / 01', title: 'Find places where communication can be easier.', lede: 'Look for services that offer written options, patient communication, or tools that do not require speech to be perfect.', body: '<div class="form-stack"><label class="field-label">Search by place or service<input id="speechSearch" type="search" placeholder="Pharmacy, cafe, service desk..." /></label><button class="primary-button" data-action="find-speech" type="button">Find speech-friendly places</button><div class="results" id="speechResults"></div></div>' },
   board: { kicker: 'Speech mode / 02', title: 'Let the app say it for you.', lede: 'Type a message or choose a saved quick response. The browser will read it aloud so you can stay part of the conversation.', body: '<div class="form-stack"><label class="field-label">Your message<textarea id="speechText" placeholder="Type what you want to say..."></textarea></label><div class="action-row"><button class="primary-button" data-action="speak-text" type="button">Speak this aloud</button><button class="secondary-button" data-action="save-phrase" type="button">Save as quick response</button></div><div class="results" id="phraseResults"></div></div>' },
@@ -87,6 +112,157 @@ function buildMoodCombos(mood) { const combos = []; moodOpeners.forEach((opener)
 function shuffle(array) { const copy = array.slice(); for (let i = copy.length - 1; i > 0; i -= 1) { const j = Math.floor(Math.random() * (i + 1)); [copy[i], copy[j]] = [copy[j], copy[i]]; } return copy; }
 function nextMoodSuggestion(mood) { if (!moodComboCache.has(mood)) moodComboCache.set(mood, buildMoodCombos(mood)); const combos = moodComboCache.get(mood); let order = moodOrder.get(mood); let pointer = moodPointer.get(mood) || 0; if (!order || pointer >= order.length) { order = shuffle(combos.map((_, i) => i)); pointer = 0; moodOrder.set(mood, order); } moodPointer.set(mood, pointer + 1); return combos[order[pointer]]; }
 
+// Openers and closers combine with body-part-specific real exercises/stretches so repeated check-ins for the same area feel varied rather than repetitive.
+const bodyOpeners = ['Here is one option:', 'Try this:', 'A gentle starting point:', 'One idea:', 'Give this a try:', 'Consider this:', 'Something to explore:', 'A small next step:'];
+const bodyClosers = ['Stop if pain increases and rest instead.', 'Move slowly and stay within a comfortable range.', 'A qualified professional can help tailor this safely.', 'Only do what feels manageable today.', 'Breathe steadily as you move.', 'Ease off if anything feels sharp or wrong.', 'There is no rush — a few repetitions is enough.', 'Skip it today if it does not feel right.'];
+const bodyCores = {
+  Neck: ['gently draw your chin straight back to make a "double chin," hold for 3 seconds, then release, repeating 5 times', 'slowly turn your head to look over one shoulder, hold briefly, then turn to look over the other shoulder, repeating 5 times each side', 'tilt your head so your ear moves toward your shoulder without lifting the shoulder, hold for 15-20 seconds, then repeat on the other side', 'slowly drop your chin toward your chest, hold for a few seconds, then gently tilt your head back to look slightly upward', 'sit tall, tilt your head to one side, and use your hand to add light pressure for a deeper stretch, holding 15-20 seconds each side', 'lower your chin toward your chest and hold for 15-20 seconds, feeling a stretch along the back of your neck', 'slowly roll your head in a half-circle from one shoulder to the other, passing through a chin-down position and avoiding tilting straight backward'],
+  Shoulders: ['roll both shoulders up, back, and down in a slow circle for 8-10 reps, then reverse the direction', 'stand in a doorway, place your forearms on the frame at shoulder height, and gently lean forward until you feel a stretch across your chest, holding 20 seconds', 'bring one arm across your chest and use your other hand to gently pull it closer, holding 20 seconds, then switch arms', 'stand with your back against a wall, arms bent in a goalpost position, and slowly slide your arms up and back down while keeping contact with the wall, repeating 8-10 times', 'extend your arms out to the sides and make slow, small circles, gradually increasing the size for 10 reps, then reverse direction', 'pull your shoulder blades together as if pinching a pencil between them, hold for 5 seconds, then relax, repeating 8-10 times', 'lean forward slightly, let one arm hang loosely, and gently swing it forward and back like a pendulum for 10-15 reps', 'reach one arm straight overhead, lean slightly to the opposite side, and hold for 15-20 seconds, then switch arms'],
+  Elbows: ['slowly bend your elbow to bring your hand toward your shoulder, then straighten it back out, repeating 10 times', 'hold your elbow bent at your side and slowly rotate your forearm to turn your palm up, then down, repeating 10 times', 'raise one arm overhead, bend the elbow to reach your hand down your back, and gently guide the elbow with your other hand, holding 15-20 seconds', 'let your arms rest at your sides or on a table and make small circles with your forearms at the elbow, 10 reps each direction', 'extend your arm straight out, gently pull your fingers back with the other hand, and hold for 15-20 seconds to feel the stretch through the forearm and elbow', 'extend your arm behind you at a comfortable height and gently rotate away to feel a stretch along the front of the arm, holding 15-20 seconds', 'using a light weight or resistance band, slowly bend and straighten your elbow through a comfortable range, repeating 8-10 times'],
+  Wrists: ['rotate your wrist in slow circles for 10 reps, then reverse direction', 'press your palms together in front of your chest with fingers pointing up, then slowly lower your hands toward your waist while keeping palms together, holding 15-20 seconds', 'extend one arm with your palm facing up, gently pull your fingers back and down with your other hand, holding 15-20 seconds', 'extend one arm with your palm facing down, gently press your fingers down and toward you with your other hand, holding 15-20 seconds', 'slowly bend your wrist up and then down like waving, repeating 10 times in each direction', 'keep your forearm still and gently tilt your wrist side to side toward your thumb and then your pinky, repeating 10 times', 'let your hands hang loosely and gently shake them out for 10-15 seconds to release tension'],
+  Hands: ['spread your fingers as wide as you comfortably can, hold for a few seconds, then make a soft fist and release, repeating 8-10 times', 'gently pull your thumb back and away from your palm, hold for 10-15 seconds, then switch hands', 'straighten your fingers, then form a hook shape, a full fist, and a straight fist, holding each briefly, repeating the sequence 5 times', 'squeeze a soft ball or rolled towel in your palm, hold for 5 seconds, then release, repeating 10 times', 'touch each fingertip to your thumb one at a time, moving from index to pinky and back, repeating the sequence 5 times', 'rest your hand flat on a table and lift each finger individually off the surface, holding briefly before lowering', 'let your hands hang loosely at your sides and gently shake them for 10-15 seconds'],
+  Back: ['on hands and knees, arch your back and drop your belly while lifting your head, then round your spine and tuck your chin, moving slowly between the two for 8-10 reps', 'sit tall, place one hand on the opposite knee, and gently twist your torso toward the back of your chair, holding 15-20 seconds, then switch sides', 'kneel and sit back onto your heels, reaching your arms forward on the floor and lowering your chest toward your thighs, holding for 20-30 seconds', 'lying on your back, pull one knee gently toward your chest with both hands, holding 15-20 seconds, then switch legs', 'stand tall, raise one arm overhead, and gently lean to the opposite side, holding 10-15 seconds before switching', 'lying face down, gently press your chest up a few inches using your arms while keeping your hips on the floor, holding 5 seconds and repeating 8-10 times', 'sit with legs extended and slowly reach toward your feet while keeping your back long, holding for 20 seconds', 'lying on your back with knees bent, gently lift your hips a few inches off the floor, hold for 5 seconds, then lower, repeating 8-10 times'],
+  Hips: ['stand with hands on your hips and make slow, wide circles with your hips, 8 reps each direction', 'sit and cross one ankle over the opposite knee, then gently lean forward until you feel a stretch in the outer hip, holding 20 seconds, then switch sides', 'step one foot forward into a gentle lunge, keeping your back straight, and hold 15-20 seconds to feel a stretch in the front of the back hip, then switch sides', 'standing or seated, alternate slowly lifting each knee toward your chest for 10 reps per side', 'lying on your side with knees bent and feet together, lift your top knee like an opening clamshell, then lower, repeating 10-12 times per side', 'with support from a chair or wall, bring one shin forward at an angle and gently fold toward it, holding 15-20 seconds if that range feels available', 'lying on your side with legs straight, lift your top leg up and slowly lower it back down, repeating 10-12 times per side', 'sit with the soles of your feet together and gently press your knees toward the floor with your hands, holding 20 seconds'],
+  Knees: ['sit in a chair and slowly straighten one knee until your leg is extended, hold briefly, then lower, repeating 10 times per leg', 'holding onto a chair or counter for balance, slowly bend your knees into a small squat and straighten back up, repeating 8-10 times', 'sit or stand and gently reach toward your toes with a slight bend in the knees, holding 15-20 seconds', 'holding onto support if needed, slowly rise onto your toes and lower back down, repeating 10-12 times', 'lying down, keep one leg straight and slowly lift it a few inches off the floor, hold briefly, then lower, repeating 10 times per leg', 'holding onto a wall or chair for balance, bend one knee to bring your heel toward your glutes, holding 15-20 seconds, then switch sides', 'holding onto support, bend your knees and hips into a small, comfortable squat, then return to standing, repeating 8-10 times', 'sit and lift one foot slightly off the floor, making slow circles with the lower leg from the knee, 8 reps each direction'],
+  Ankles: ['lift one foot slightly and rotate your ankle in slow circles, 10 reps each direction, then switch feet', 'lift one foot and slowly trace the letters of the alphabet in the air using your big toe as the pointer', 'place your hands on a wall, step one foot back with the heel flat on the floor, and lean forward gently until you feel a stretch in the calf, holding 20 seconds', 'keeping your heels on the floor, lift the front of your feet up toward your shins, hold briefly, then lower, repeating 10-12 times', 'holding onto support if needed, rise up onto your toes, hold briefly, then lower your heels back down, repeating 10-12 times', 'point your toes forward and then flex them back toward you, repeating 10-15 times to help circulation and mobility', 'keeping your heel still, gently tilt your foot inward and then outward, repeating 10 times in each direction'],
+  Feet: ['place a small towel flat on the floor and use your toes to scrunch it toward you, then release, repeating 8-10 times', 'using your toes, pick up small objects like marbles or pebbles one at a time and place them in a small bowl', 'roll the sole of your foot slowly back and forth over a ball or rolling pin for 30-60 seconds', 'spread your toes apart as wide as you can, hold for a few seconds, then relax, repeating 8-10 times', 'point and flex your feet slowly and repeatedly for about 30 seconds to warm up before other foot exercises', 'keeping your heels on the floor, alternate tapping your toes up and down quickly for 20-30 seconds', 'roll a bottle or ball under the arch of your foot with gentle pressure for 30-60 seconds to ease tension'],
+};
+const bodyComboCache = new Map();
+const bodyOrder = new Map();
+const bodyPointer = new Map();
+function buildBodyCombos(part) { const combos = []; bodyOpeners.forEach((opener) => bodyCores[part].forEach((core, coreIndex) => bodyClosers.forEach((closer) => combos.push({ text: `${opener} ${core}. ${closer}`, coreIndex })))); return combos; }
+function nextBodySuggestion(part) { if (!bodyComboCache.has(part)) bodyComboCache.set(part, buildBodyCombos(part)); const combos = bodyComboCache.get(part); let order = bodyOrder.get(part); let pointer = bodyPointer.get(part) || 0; if (!order || pointer >= order.length) { order = shuffle(combos.map((_, i) => i)); pointer = 0; bodyOrder.set(part, order); } bodyPointer.set(part, pointer + 1); return combos[order[pointer]]; }
+
+// Stick-figure joint name suffixes, shorthand transform builders, and a per-stretch animation for every entry in bodyCores.
+const FIG = { head: 'head-group', torso: 'torso', shL: 'shoulderL', shR: 'shoulderR', elL: 'elbowL', elR: 'elbowR', haL: 'handL', haR: 'handR', hipL: 'hipL', hipR: 'hipR', knL: 'kneeL', knR: 'kneeR', foL: 'footL', foR: 'footR', root: 'root' };
+// Each joint's pivot point in the shared viewBox's coordinate space, used to keep rotated limbs attached to their parent instead of swinging around a stale origin.
+const FIG_PIVOT = { 'head-group': [100, 58], shoulderL: [100, 70], shoulderR: [100, 70], elbowL: [72, 95], elbowR: [128, 95], handL: [58, 125], handR: [142, 125], torso: [100, 150], hipL: [100, 150], hipR: [100, 150], kneeL: [85, 195], kneeR: [115, 195], footL: [80, 240], footR: [120, 240], root: [100, 150] };
+const r = (deg) => `rotate(${deg}deg)`;
+const sc = (v) => `scale(${v})`;
+const sx = (v) => `scaleX(${v})`;
+const tr = (x, y) => `translate(${x}px, ${y}px)`;
+// Rotate/scale transforms are wrapped with translate-to-pivot / translate-back so a joint always spins around its own attachment point, even after an ancestor joint has already rotated. Plain translates (from tr()) pass through untouched.
+function keyMove(part, transforms, duration = 1600, iterations = 3, easing = 'ease-in-out') { const pivot = FIG_PIVOT[part]; const wrapped = transforms.map((value) => { if (pivot && (value.startsWith('rotate') || value.startsWith('scale'))) { const [px, py] = pivot; return `translate(${px}px, ${py}px) ${value} translate(${-px}px, ${-py}px)`; } return value; }); return { part, keyframes: wrapped.map((value) => ({ transform: value })), options: { duration, iterations, easing } }; }
+const exerciseAnimations = {
+  Neck: [
+    [keyMove(FIG.head, [r(0), r(8), r(0), r(8), r(0)], 1200, 3)],
+    [keyMove(FIG.head, [r(0), r(25), r(0), r(-25), r(0)], 1600, 3)],
+    [keyMove(FIG.head, [r(0), r(20), r(20), r(0), r(-20), r(-20), r(0)], 2400, 2)],
+    [keyMove(FIG.head, [r(0), r(15), r(0), r(-12), r(0)], 1500, 3)],
+    [keyMove(FIG.head, [r(0), r(24), r(24), r(0)], 2000, 2)],
+    [keyMove(FIG.head, [r(0), r(30), r(30), r(0)], 2000, 2)],
+    [keyMove(FIG.head, [r(0), r(15), r(25), r(15), r(0), r(-15), r(-25), r(-15), r(0)], 2600, 2)],
+  ],
+  Shoulders: [
+    [keyMove(FIG.shL, [r(0), r(-15), r(0), r(15), r(0)], 1600, 3), keyMove(FIG.shR, [r(0), r(15), r(0), r(-15), r(0)], 1600, 3)],
+    [keyMove(FIG.shL, [r(0), r(-45), r(-45), r(0)], 2200, 2), keyMove(FIG.shR, [r(0), r(45), r(45), r(0)], 2200, 2)],
+    [keyMove(FIG.shL, [r(0), r(80), r(80), r(0)], 2000, 2), keyMove(FIG.elL, [r(0), r(15), r(15), r(0)], 2000, 2)],
+    [keyMove(FIG.shL, [r(0), r(-140), r(0)], 2400, 3), keyMove(FIG.shR, [r(0), r(140), r(0)], 2400, 3)],
+    [keyMove(FIG.shL, [r(0), r(60), r(120), r(180), r(120), r(60), r(0)], 2600, 2), keyMove(FIG.shR, [r(0), r(-60), r(-120), r(-180), r(-120), r(-60), r(0)], 2600, 2)],
+    [keyMove(FIG.shL, [tr(0, 0), tr(5, -2), tr(0, 0)], 1500, 3), keyMove(FIG.shR, [tr(0, 0), tr(-5, -2), tr(0, 0)], 1500, 3)],
+    [keyMove(FIG.shL, [r(0), r(18), r(-18), r(0)], 1800, 4)],
+    [keyMove(FIG.shL, [r(0), r(-165), r(-165), r(0)], 2200, 2)],
+  ],
+  Elbows: [
+    [keyMove(FIG.elL, [r(0), r(120), r(0)], 1400, 4)],
+    [keyMove(FIG.haL, [sx(1), sx(-1), sx(1)], 1800, 3)],
+    [keyMove(FIG.shL, [r(0), r(-170), r(-170), r(0)], 2200, 2), keyMove(FIG.elL, [r(0), r(140), r(140), r(0)], 2200, 2)],
+    [keyMove(FIG.elL, [r(0), r(20), r(40), r(20), r(0), r(-20), r(-40), r(-20), r(0)], 2200, 2)],
+    [keyMove(FIG.elL, [r(0), r(10), r(10), r(0)], 1800, 2), keyMove(FIG.haL, [r(0), r(-30), r(-30), r(0)], 1800, 2)],
+    [keyMove(FIG.shL, [r(0), r(-60), r(-60), r(0)], 2000, 2)],
+    [keyMove(FIG.elL, [r(0), r(100), r(0), r(100), r(0)], 1800, 3)],
+  ],
+  Wrists: [
+    [keyMove(FIG.haL, [r(0), r(30), r(60), r(30), r(0), r(-30), r(-60), r(-30), r(0)], 2000, 3)],
+    [keyMove(FIG.elL, [r(0), r(90), r(90), r(0)], 2000, 2), keyMove(FIG.elR, [r(0), r(90), r(90), r(0)], 2000, 2)],
+    [keyMove(FIG.haL, [r(0), r(-45), r(-45), r(0)], 1800, 2)],
+    [keyMove(FIG.haL, [r(0), r(45), r(45), r(0)], 1800, 2)],
+    [keyMove(FIG.haL, [r(0), r(30), r(-30), r(0)], 1400, 4)],
+    [keyMove(FIG.haL, [r(0), r(20), r(0), r(-20), r(0)], 1400, 4)],
+    [keyMove(FIG.haL, [r(0), r(15), r(-15), r(15), r(-15), r(0)], 1000, 4)],
+  ],
+  Hands: [
+    [keyMove(FIG.haL, [sc(1), sc(1.5), sc(1), sc(0.7), sc(1)], 1600, 3)],
+    [keyMove(FIG.haL, [r(0), r(25), r(25), r(0)], 1600, 3)],
+    [keyMove(FIG.haL, [sc(1), sc(0.8), sc(1.3), sc(1)], 1800, 2)],
+    [keyMove(FIG.haL, [sc(1), sc(0.6), sc(1)], 1200, 4)],
+    [keyMove(FIG.haL, [sc(1), sc(1.15), sc(1), sc(1.15), sc(1)], 900, 4)],
+    [keyMove(FIG.haL, [r(0), r(-15), r(0), r(15), r(0)], 1200, 3)],
+    [keyMove(FIG.haL, [tr(0, 0), tr(3, 0), tr(-3, 0), tr(0, 0)], 900, 4)],
+  ],
+  Back: [
+    [keyMove(FIG.torso, [r(0), r(-10), r(0), r(10), r(0)], 2000, 3), keyMove(FIG.head, [r(0), r(10), r(0), r(-10), r(0)], 2000, 3)],
+    [keyMove(FIG.torso, [r(0), r(20), r(0), r(-20), r(0)], 2000, 2)],
+    [keyMove(FIG.torso, [r(0), r(45), r(45), r(0)], 2400, 2), keyMove(FIG.shL, [r(0), r(-150), r(-150), r(0)], 2400, 2), keyMove(FIG.shR, [r(0), r(150), r(150), r(0)], 2400, 2)],
+    [keyMove(FIG.hipL, [r(0), r(90), r(90), r(0)], 2000, 2)],
+    [keyMove(FIG.torso, [r(0), r(18), r(0), r(-18), r(0)], 1800, 3)],
+    [keyMove(FIG.torso, [r(0), r(-15), r(-15), r(0)], 1800, 2)],
+    [keyMove(FIG.torso, [r(0), r(50), r(50), r(0)], 2200, 2)],
+    [keyMove(FIG.root, [tr(0, 0), tr(0, -8), tr(0, 0)], 1800, 3)],
+  ],
+  Hips: [
+    [keyMove(FIG.hipL, [r(0), r(15), r(25), r(15), r(0), r(-15), r(-25), r(-15), r(0)], 2400, 2)],
+    [keyMove(FIG.hipL, [r(0), r(-35), r(-35), r(0)], 2000, 2)],
+    [keyMove(FIG.hipL, [r(0), r(30), r(30), r(0)], 2000, 2), keyMove(FIG.hipR, [r(0), r(-20), r(-20), r(0)], 2000, 2)],
+    [keyMove(FIG.hipL, [r(0), r(60), r(0)], 1400, 3), keyMove(FIG.hipR, [r(0), r(-60), r(0)], 1400, 3)],
+    [keyMove(FIG.knL, [r(0), r(-40), r(0)], 1600, 4)],
+    [keyMove(FIG.hipL, [r(0), r(-50), r(-50), r(0)], 2200, 2)],
+    [keyMove(FIG.hipL, [tr(0, 0), tr(-15, 0), tr(0, 0)], 1800, 3)],
+    [keyMove(FIG.hipL, [r(0), r(-45), r(-45), r(0)], 2000, 2), keyMove(FIG.hipR, [r(0), r(45), r(45), r(0)], 2000, 2)],
+  ],
+  Knees: [
+    [keyMove(FIG.knL, [r(0), r(-90), r(0)], 1600, 3)],
+    [keyMove(FIG.knL, [r(0), r(40), r(0)], 1600, 3)],
+    [keyMove(FIG.torso, [r(0), r(30), r(30), r(0)], 2200, 2), keyMove(FIG.knL, [r(0), r(-20), r(-20), r(0)], 2200, 2)],
+    [keyMove(FIG.root, [tr(0, 0), tr(0, -6), tr(0, 0)], 1400, 4)],
+    [keyMove(FIG.hipL, [r(0), r(45), r(0)], 1600, 3)],
+    [keyMove(FIG.knL, [r(0), r(120), r(120), r(0)], 2000, 2)],
+    [keyMove(FIG.hipL, [r(0), r(35), r(0)], 1600, 3), keyMove(FIG.knL, [r(0), r(50), r(0)], 1600, 3)],
+    [keyMove(FIG.knL, [r(0), r(15), r(0), r(-15), r(0)], 1400, 4)],
+  ],
+  Ankles: [
+    [keyMove(FIG.foL, [r(0), r(20), r(35), r(20), r(0), r(-20), r(-35), r(-20), r(0)], 2200, 2)],
+    [keyMove(FIG.foL, [r(0), r(15), r(-10), r(20), r(-15), r(0)], 2400, 2)],
+    [keyMove(FIG.foL, [r(0), r(-25), r(-25), r(0)], 2000, 2)],
+    [keyMove(FIG.foL, [r(0), r(-30), r(0)], 1400, 4)],
+    [keyMove(FIG.root, [tr(0, 0), tr(0, -6), tr(0, 0)], 1400, 4)],
+    [keyMove(FIG.foL, [r(0), r(-20), r(0), r(20), r(0)], 1200, 4)],
+    [keyMove(FIG.foL, [r(0), r(18), r(0), r(-18), r(0)], 1400, 4)],
+  ],
+  Feet: [
+    [keyMove(FIG.foL, [sc(1), sc(0.75), sc(1)], 1200, 4)],
+    [keyMove(FIG.foL, [sc(1), sc(0.7), sc(1), sc(0.7), sc(1)], 1400, 3)],
+    [keyMove(FIG.foL, [r(0), r(15), r(0), r(-10), r(0)], 1800, 3)],
+    [keyMove(FIG.foL, [sc(1), sc(1.3), sc(1)], 1400, 3)],
+    [keyMove(FIG.foL, [r(0), r(-20), r(0), r(20), r(0)], 1200, 4)],
+    [keyMove(FIG.foL, [r(0), r(-15), r(0)], 900, 5)],
+    [keyMove(FIG.foL, [r(0), r(-25), r(-25), r(0)], 2000, 2)],
+  ],
+};
+const stretchAnimations = new Map();
+// Animations are created paused and looped, so nothing races to finish while the user is still scrolling to see it.
+function createStretchAnimation(moves, containerEl, suffix) { const animations = moves.map((move) => { const el = containerEl.querySelector(`#fig-${suffix}-${move.part}`); if (!el) return null; const anim = el.animate(move.keyframes, { ...move.options, iterations: Infinity }); anim.pause(); return anim; }).filter(Boolean); stretchAnimations.set(suffix, animations); return animations; }
+// Renders one card per selected body area with its own randomly suggested exercise, a matching stick figure, and its own play/pause control.
+function renderMobilitySuggestions(parts) {
+  const result = $('#mobilityResult');
+  const cards = $('#mobilityCards');
+  if (!result || !cards) return;
+  result.hidden = false;
+  stretchAnimations.clear();
+  if (!parts.length) { cards.innerHTML = '<p>Choose one or more body areas first, then we can suggest a gentle starting point.</p>'; return; }
+  const picks = parts.map((part, index) => ({ part, suffix: `${part}${index}`, suggestion: nextBodySuggestion(part) }));
+  cards.innerHTML = picks.map(({ part, suffix, suggestion }) => `<div class="mobility-card"><h5>${escapeHtml(part)}</h5><p class="mobility-instructions">${escapeHtml(suggestion.text)}</p><div class="stretch-stage" data-suffix="${suffix}">${stickFigureSvg(suffix)}</div><button class="secondary-button stretch-toggle" data-suffix="${suffix}" data-playing="false" type="button">▶ Play animation</button></div>`).join('');
+  picks.forEach(({ part, suffix, suggestion }) => { const stage = cards.querySelector(`.stretch-stage[data-suffix="${suffix}"]`); if (stage) createStretchAnimation(exerciseAnimations[part][suggestion.coreIndex], stage, suffix); });
+  cards.querySelectorAll('.stretch-toggle').forEach((button) => button.addEventListener('click', () => {
+    const suffix = button.dataset.suffix;
+    const animations = stretchAnimations.get(suffix) || [];
+    const isPlaying = button.dataset.playing === 'true';
+    animations.forEach((anim) => (isPlaying ? anim.pause() : anim.play()));
+    button.dataset.playing = isPlaying ? 'false' : 'true';
+    button.textContent = isPlaying ? '▶ Play animation' : '⏸ Pause animation';
+  }));
+}
+
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 
@@ -108,6 +284,9 @@ function notifyReminder(reminder) { const doseText = reminder.dose ? ` (${remind
 function scheduleReminder(key, reminder) { if (!reminder.time) return; const timerKey = `${key}:${reminder.id}`; window.clearTimeout(reminderTimers.get(timerKey)); const [hours, minutes] = reminder.time.split(':').map(Number); const now = new Date(); const next = new Date(now); next.setHours(hours, minutes, 0, 0); if (next <= now) next.setDate(next.getDate() + 1); const timer = window.setTimeout(() => { notifyReminder(reminder); scheduleReminder(key, reminder); }, next.getTime() - now.getTime()); reminderTimers.set(timerKey, timer); }
 function scheduleStoredReminders() { ['openpath-routines', 'openpath-meds'].forEach((key) => getStoredItems(key).forEach((reminder) => scheduleReminder(key, reminder))); }
 async function requestReminderPermission() { if (!('Notification' in window)) return; if (Notification.permission === 'default') await Notification.requestPermission(); }
+const TOUCH_SCALE_KEY = 'openpath-touch-scale';
+function getTouchScale() { const stored = Number(localStorage.getItem(TOUCH_SCALE_KEY)); return stored >= 100 && stored <= 160 ? stored : 100; }
+function applyTouchScale(percent) { document.documentElement.style.setProperty('--touch-scale', percent / 100); localStorage.setItem(TOUCH_SCALE_KEY, String(percent)); }
 function bindFeatureEvents() {
   document.querySelectorAll('[data-action="find-cognitive"]').forEach((button) => button.addEventListener('click', () => { const query = $('#placeSearch').value.trim() || 'your area'; $('#placeResults').innerHTML = `<div class="result"><span><strong>Quiet ${escapeHtml(query)} options</strong><small>Lower sensory load, clear information, and a calmer pace are the details to check.</small></span><strong>Review</strong></div>`; }));
   document.querySelectorAll('[data-action="find-speech"]').forEach((button) => button.addEventListener('click', () => { const query = $('#speechSearch').value.trim() || 'nearby'; $('#speechResults').innerHTML = `<div class="result"><span><strong>Accessible ${escapeHtml(query)} options</strong><small>Look for written communication, patient service, and non-verbal ways to complete tasks.</small></span><strong>Review</strong></div>`; }));
@@ -115,7 +294,15 @@ function bindFeatureEvents() {
   const medForm = $('#medForm'); if (medForm) { renderStoredList('openpath-meds', '#medResults', 'No medication reminders yet.'); medForm.addEventListener('submit', async (event) => { event.preventDefault(); const data = new FormData(medForm); const time = data.get('time'); const dose = data.get('dose') || 'Dose reminder'; saveStored('openpath-meds', data.get('name'), `${dose} at ${time}`, time, dose); scheduleStoredReminders(); await requestReminderPermission(); renderStoredList('openpath-meds', '#medResults', 'No medication reminders yet.'); showToast('Medication reminder saved on this device.'); }); }
   document.querySelectorAll('[data-mood]').forEach((button) => button.addEventListener('click', () => { document.querySelectorAll('[data-mood]').forEach((item) => item.classList.remove('is-selected')); button.classList.add('is-selected'); const result = $('#moodResult'); result.hidden = false; result.querySelector('p').textContent = nextMoodSuggestion(button.dataset.mood); }));
   document.querySelectorAll('[data-body]').forEach((button) => button.addEventListener('click', () => button.classList.toggle('is-selected')));
-  document.querySelectorAll('[data-action="mobility"]').forEach((button) => button.addEventListener('click', () => { const chosen = [...document.querySelectorAll('[data-body].is-selected')].map((item) => item.dataset.body); const result = $('#mobilityResult'); result.hidden = false; result.querySelector('p').textContent = chosen.length ? `For ${chosen.join(', ')}, try a slow range-of-motion movement and stop if pain increases. A qualified professional can help tailor this safely.` : 'Choose one or more body areas first, then we can suggest a gentle starting point.'; }));
+  document.querySelectorAll('[data-action="mobility"]').forEach((button) => button.addEventListener('click', () => { const chosen = [...document.querySelectorAll('[data-body].is-selected')].map((item) => item.dataset.body); renderMobilitySuggestions(chosen); }));
+  const touchSlider = $('#touchScaleSlider');
+  if (touchSlider) {
+    const updateTouchDisplay = (percent) => { const label = $('#touchScaleLabel'); const meterSpan = $('#touchScaleMeter'); if (label) label.textContent = `Touch target size: ${percent}%${percent === 100 ? ' (default)' : ''}`; if (meterSpan) meterSpan.style.width = `${((percent - 100) / 60) * 100}%`; };
+    const initialScale = getTouchScale();
+    touchSlider.value = String(initialScale);
+    updateTouchDisplay(initialScale);
+    touchSlider.addEventListener('input', () => { const percent = Number(touchSlider.value); applyTouchScale(percent); updateTouchDisplay(percent); });
+  }
   document.querySelectorAll('[data-action="start-game"]').forEach((button) => button.addEventListener('click', () => { gameLength = 4; startMemoryRound(); }));
   const gameAnswer = $('#gameAnswer'); if (gameAnswer) { gameAnswer.addEventListener('input', () => { if (!gamePattern.length) return; hideMemorySequence(); const answer = gameAnswer.value.replace(/\D/g, '').slice(0, gamePattern.length); gameAnswer.value = answer; if (answer.length !== gamePattern.length) return; if (answer === gamePattern.join('')) { gameLength += 1; startMemoryRound(`Correct. Now try ${gameLength} numbers.`); } else { gameLength = 4; startMemoryRound('Almost. Starting again with 4 numbers.'); } }); }
   document.querySelectorAll('[data-game]').forEach((button) => button.addEventListener('click', () => selectGame(button.dataset.game)));
@@ -149,6 +336,7 @@ document.addEventListener('click', (event) => { const button = event.target.clos
 $('#voiceButton').addEventListener('click', startVoiceControl);
 $('#alarmDismiss').addEventListener('click', stopAlarm);
 $('#dateLabel').textContent = new Intl.DateTimeFormat('en', { weekday: 'long', month: 'short', day: 'numeric' }).format(new Date());
+applyTouchScale(getTouchScale());
 renderFeatureList();
 renderContent();
 scheduleStoredReminders();

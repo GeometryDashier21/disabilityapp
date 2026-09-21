@@ -103,9 +103,16 @@ The app will initially support needs associated with these categories:
 
 - The app will prompt users to check in on which parts of their body are not working as well as usual and which parts are working well.
 - The check-in will use a multiple-choice format so users can select the areas they are experiencing discomfort, stiffness, weakness, or reduced movement in.
+- Body area options include: Neck, Shoulders, Elbows, Wrists, Hands, Back, Hips, Knees, Ankles, and Feet.
 - The app will provide recommended mobility exercises or gentle movement routines tailored to the selected body areas and the user's reported pain or strain.
+- Each body area draws from a large, locally generated pool of specific, named exercises and stretches for that area (not a generic "range of motion" message) so repeated check-ins for the same area feel varied rather than repetitive, without requiring an external AI service.
+- Each exercise/stretch suggestion includes clear, step-by-step instructions (positioning, reps, and hold times) so the user knows exactly how to perform it.
+- Selecting the same body area again shows a different suggestion each time until the full pool has been shown, then the pool reshuffles.
+- For each selected body area, the app displays only the one randomly suggested exercise, along with an animated illustration of a person performing that exact suggested movement (not a browsable list of every possible stretch).
+- The animated illustration is shown on a ground/floor line so the figure appears grounded during the movement.
+- Each animation starts paused with its own Play/Pause button, and loops continuously once played, so the user has time to scroll to it and watch without racing a short one-shot clip.
 - The goal is to help users manage discomfort, reduce stiffness, and support overall mobility through guided movement.
-- The exact body region categories, pain levels, exercise library, and recommendation logic are to be defined.
+- The exact pain levels and recommendation logic beyond area selection are to be defined.
 
 #### Physical Accessibility Indicator
 
@@ -119,7 +126,9 @@ The app will initially support needs associated with these categories:
 - Motor Mode will use a larger layout and more spacious interface design for users with tremors or reduced fine motor control.
 - Buttons, controls, and interactive elements will be intentionally enlarged to improve tap accuracy and reduce accidental presses.
 - The interface will prioritize clarity, separation, and accessibility over compact layouts.
-- The required sizing thresholds, spacing rules, and target-device considerations are to be defined.
+- The Large Touch Layout screen provides a working slider (100%-160%, in 10% steps) that live-resizes every button and control across the entire app (not just Motor Mode), with a label showing the current percentage.
+- The chosen touch target size is saved on the device and reapplied automatically the next time the app loads.
+- The required spacing rules and target-device considerations beyond the slider range are to be defined.
 
 #### Persistent Voice Control
 
