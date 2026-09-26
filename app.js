@@ -16,6 +16,7 @@ const modes = {
       ['physical', 'Physical access finder'],
       ['large', 'Large touch layout'],
       ['voice', 'Persistent voice control'],
+      ['motorGames', 'Motor games'],
     ],
   },
   speech: {
@@ -62,6 +63,55 @@ const speechLessonSets = [
   { name: 'Comfort words', words: [['Safe', ['safe']], ['Kind', ['k', 'ind']], ['Hope', ['hope']], ['Peace', ['peace']], ['Rest', ['rest']], ['Warm', ['warm']], ['Cozy', ['co', 'zy']], ['Gentle', ['gen', 'tle']], ['Quiet', ['qui', 'et']], ['Brave', ['brave']], ['Strong', ['strong']], ['Proud', ['proud']], ['Calm', ['calm']], ['Smile', ['sm', 'ile']], ['Care', ['care']], ['Love', ['love']], ['Trust', ['trust']], ['Welcome', ['wel', 'come']], ['Together', ['to', 'ge', 'ther']], ['You', ['you']]] },
 ];
 
+const VOICE_PROFILES = [
+  { id: 'feminine-1', label: 'Feminine One', gender: 'feminine', pitch: 1.05, rate: 1 },
+  { id: 'feminine-2', label: 'Feminine Two', gender: 'feminine', pitch: 1.25, rate: 1.05 },
+  { id: 'feminine-3', label: 'Feminine Three', gender: 'feminine', pitch: 0.95, rate: 0.92 },
+  { id: 'feminine-4', label: 'Feminine Four', gender: 'feminine', pitch: 1.4, rate: 1.1 },
+  { id: 'feminine-5', label: 'Feminine Five', gender: 'feminine', pitch: 1.15, rate: 0.85 },
+  { id: 'masculine-1', label: 'Masculine One', gender: 'masculine', pitch: 0.8, rate: 1 },
+  { id: 'masculine-2', label: 'Masculine Two', gender: 'masculine', pitch: 0.6, rate: 0.95 },
+  { id: 'masculine-3', label: 'Masculine Three', gender: 'masculine', pitch: 0.95, rate: 1.08 },
+  { id: 'masculine-4', label: 'Masculine Four', gender: 'masculine', pitch: 0.5, rate: 0.9 },
+  { id: 'masculine-5', label: 'Masculine Five', gender: 'masculine', pitch: 0.7, rate: 1.15 },
+];
+// Best-effort gender guess from a system voice's name so we can group real browser voices into the ten profiles above.
+const FEMININE_VOICE_HINTS = /female|woman|zira|samantha|victoria|karen|susan|moira|tessa|fiona|alice|amelie|anna|ava|allison|emma|eva|ida|joana|kate|laura|lisa|mary|monica|paulina|sandy|sara|serena|tina|vicki|veena|salli|kendra|joanna|ivy|kimberly|nicole|aria|zoe|maria|sabina|catherine|hazel|linda/i;
+const MASCULINE_VOICE_HINTS = /male|man|david|mark|alex|daniel|fred|george|james|tom|thomas|oliver|ryan|eric|aaron|gordon|justin|matthew|guy|rishi|diego|carlos|jorge|luca|marco|russell|joey|brian|will|arthur|henry/i;
+function classifyVoiceGender(voice) { const name = `${voice.name} ${voice.voiceURI}`.toLowerCase(); if (FEMININE_VOICE_HINTS.test(name)) return 'feminine'; if (MASCULINE_VOICE_HINTS.test(name)) return 'masculine'; return 'unknown'; }
+let voiceRoster = null;
+// Maps each of the ten voice profiles to a real system voice (when available), cycling through the pool so every profile still gets a voice even with a small pool.
+function refreshVoiceRoster() {
+  if (!('speechSynthesis' in window)) { voiceRoster = {}; return; }
+  const allVoices = window.speechSynthesis.getVoices();
+  if (!allVoices.length) return;
+  const englishVoices = allVoices.filter((voice) => /^en/i.test(voice.lang));
+  const usablePool = englishVoices.length ? englishVoices : allVoices;
+  const feminineVoices = usablePool.filter((voice) => classifyVoiceGender(voice) === 'feminine');
+  const masculineVoices = usablePool.filter((voice) => classifyVoiceGender(voice) === 'masculine');
+  const unknownVoices = usablePool.filter((voice) => classifyVoiceGender(voice) === 'unknown');
+  const roster = {};
+  let feminineIndex = 0;
+  let masculineIndex = 0;
+  VOICE_PROFILES.forEach((profile) => {
+    if (profile.gender === 'feminine') {
+      const source = feminineVoices.length ? feminineVoices : (unknownVoices.length ? unknownVoices : usablePool);
+      roster[profile.id] = source.length ? source[feminineIndex % source.length] : null;
+      feminineIndex += 1;
+    } else {
+      const source = masculineVoices.length ? masculineVoices : (unknownVoices.length ? unknownVoices : usablePool);
+      roster[profile.id] = source.length ? source[masculineIndex % source.length] : null;
+      masculineIndex += 1;
+    }
+  });
+  voiceRoster = roster;
+}
+if ('speechSynthesis' in window) { refreshVoiceRoster(); window.speechSynthesis.onvoiceschanged = refreshVoiceRoster; }
+const VOICE_LOCK_KEY = 'openpath-board-voice';
+function getLockedVoiceId() { return localStorage.getItem(VOICE_LOCK_KEY) || null; }
+function setLockedVoiceId(id) { localStorage.setItem(VOICE_LOCK_KEY, id); }
+function getVoiceProfile(id) { return VOICE_PROFILES.find((profile) => profile.id === id) || null; }
+
 const featureContent = {
   access: { kicker: 'Cognitive mode / 01', title: 'Find places that feel easier to use.', lede: 'A simple signal for mental and cognitive accessibility. Look for calmer, clearer environments that match what you need today.', body: '<div class="form-stack"><label class="field-label">What kind of place are you looking for?<input id="placeSearch" type="search" placeholder="Library, cafe, clinic..." /></label><button class="primary-button" data-action="find-cognitive" type="button">Find supportive places</button><div class="results" id="placeResults"></div></div>' },
   routine: { kicker: 'Cognitive mode / 02', title: 'Keep the next thing close.', lede: 'Set a small reminder for a routine. It will stay on this device and can ask for notification permission when needed.', body: '<form class="form-stack" id="routineForm"><label class="field-label">Routine name<input name="name" required placeholder="Get ready for bed" /></label><label class="field-label">Time<input name="time" type="time" required /></label><button class="primary-button" type="submit">Add routine reminder</button></form><div class="results" id="routineResults"></div>' },
@@ -72,8 +122,9 @@ const featureContent = {
   physical: { kicker: 'Motor mode / 02', title: 'Know what access looks like before you go.', lede: 'Browse a sample physical-accessibility signal. In the full product, this can be connected to verified place information.', body: '<div class="results"><div class="result"><span><strong>Riverside Library</strong><small>Step-free entrance, wide aisles, accessible restroom</small></span><strong>Good access</strong></div><div class="result" style="border-color:var(--yellow)"><span><strong>Juniper Market</strong><small>Ground-level entrance, limited seating</small></span><strong>Check details</strong></div></div>' },
   large: { kicker: 'Motor mode / 03', title: 'More room. More control.', lede: 'Motor Mode is designed with bigger targets and more separation for people with tremors or reduced fine motor control.', body: '<div class="tool-card"><h4>Large touch layout</h4><p>Tap the plus or minus button to make every button and control across the app bigger or smaller. Your choice is saved on this device.</p><div class="touch-scale-control"><div class="touch-scale-buttons"><button class="touch-scale-button" id="touchScaleMinus" type="button" aria-label="Make touch targets smaller">&minus;</button><div class="meter"><span id="touchScaleMeter"></span></div><button class="touch-scale-button" id="touchScalePlus" type="button" aria-label="Make touch targets bigger">+</button></div><p id="touchScaleLabel"></p></div></div>' },
   voice: { kicker: 'Motor mode / 04', title: 'Use your voice when touch is hard.', lede: 'The voice button stays at the top of the app. Try it now, or use the button below to test browser voice recognition.', body: '<div class="tool-card"><h4>Voice control</h4><p>Say “open cognitive mode”, “open motor mode”, or “open speech mode” where browser support is available.</p><div class="action-row"><button class="primary-button" data-action="listen" type="button">Start listening</button></div></div>' },
+  motorGames: { kicker: 'Motor mode / 05', title: 'Sharpen your speed and steady control.', lede: 'Choose a motor game: Whack-a-mole tests reaction speed, and Precision drawing tests steady, accurate control. Whack moles with your mouse cursor or a screen tap, or trace a randomized guide shape as closely as you can before time runs out. This is practice, not a medical assessment.', body: '<div class="game-selector" role="group" aria-label="Choose a motor game"><button class="choice-button" data-motor-game="whack" type="button">Whack-a-mole</button><button class="choice-button" data-motor-game="draw" type="button">Precision drawing</button></div><div class="tool-card motor-game" id="motorWhackGame"><div class="memory-game-heading"><h4>Whack-a-mole</h4><div class="memory-game-stats"><span id="motorBest">Best: 0 moles</span><span id="motorLevelLabel">Level 1 of 10</span><span id="motorClock">0:30</span><span id="motorStrikes">Strikes: 0 / 5</span></div></div><p>How to play: whack each mole with your mouse cursor or a screen tap before it disappears. Missing a mole costs one strike, and strikes carry over between levels. Run out of all 5 strikes and the game ends, so clear all 10 levels before that happens.</p><p id="motorPrompt">Press start to begin level 1. Whack moles the moment they appear!</p><div class="motor-board" id="motorBoard"></div><p class="game-feedback" id="motorResult" aria-live="polite"></p><div class="action-row"><button class="primary-button" data-action="start-motor" type="button">Start game</button></div><div class="item-game-over" id="motorGameOver" hidden><strong id="motorGameOverTitle">Round Over</strong><span id="motorGameOverDetail"></span><p id="motorGameOverScore"></p></div></div><div class="tool-card motor-game" id="motorDrawGame" hidden><div class="memory-game-heading"><h4>Precision drawing</h4><div class="memory-game-stats"><span id="drawBest">Best: 0 levels cleared</span><span id="drawLevelLabel">Level 1 of 6</span><span id="drawClock">Study: 10s</span></div></div><p>How to play: study the thick, see-through guide shape, then trace over it as closely as you can with your mouse or a screen tap before time runs out. Press Confirm drawing when you are done. You need 90% accuracy to clear each level. The guide gets thinner, the shapes get longer, and the clocks get shorter as you go.</p><p id="drawPrompt">Press start to see level 1 shape.</p><div class="motor-board draw-board" id="drawBoard"><canvas id="drawCanvas"></canvas><div class="draw-phase-badge" id="drawPhaseBadge"></div><div class="draw-pass-overlay" id="drawPassOverlay" hidden></div></div><p class="game-feedback" id="drawResult" aria-live="polite"></p><div class="action-row"><button class="primary-button" data-action="start-draw" type="button">Start game</button><button class="secondary-button" data-action="clear-draw" type="button">Clear drawing</button><button class="primary-button" data-action="confirm-draw" type="button">Confirm drawing</button></div><div class="item-game-over" id="drawGameOver" hidden><strong id="drawGameOverTitle">Round Over</strong><span id="drawGameOverDetail"></span><p id="drawGameOverScore"></p></div></div>' },
   speechPlaces: { kicker: 'Speech mode / 01', title: 'Find places where communication can be easier.', lede: 'Look for services that offer written options, patient communication, or tools that do not require speech to be perfect.', body: '<div class="form-stack"><label class="field-label">Search by place or service<input id="speechSearch" type="search" placeholder="Pharmacy, cafe, service desk..." /></label><button class="primary-button" data-action="find-speech" type="button">Find speech-friendly places</button><div class="results" id="speechResults"></div></div>' },
-  board: { kicker: 'Speech mode / 02', title: 'Let the app say it for you.', lede: 'Type a message or choose a saved quick response. The browser will read it aloud so you can stay part of the conversation.', body: '<div class="form-stack"><label class="field-label">Your message<textarea id="speechText" placeholder="Type what you want to say..."></textarea></label><div class="action-row"><button class="primary-button" data-action="speak-text" type="button">Speak this aloud</button><button class="secondary-button" data-action="save-phrase" type="button">Save as quick response</button></div><div class="results" id="phraseResults"></div></div>' },
+  board: { kicker: 'Speech mode / 02', title: 'Let the app say it for you.', lede: 'Type a message or choose a saved quick response. The browser will read it aloud so you can stay part of the conversation.', body: '<div class="form-stack"><label class="field-label">Your message<textarea id="speechText" placeholder="Type what you want to say..."></textarea></label><div class="action-row"><button class="primary-button" data-action="speak-text" type="button">Speak this aloud</button><button class="secondary-button" data-action="save-phrase" type="button">Save as quick response</button></div><div class="results" id="phraseResults"></div><div class="tool-card voice-picker"><h4>Conversation voice</h4><p>Pick a voice, test how it sounds, then choose it as your conversation board voice. You can change it again at any time, even after choosing one.</p><p class="voice-locked-label" id="voiceLockedLabel"></p><label class="field-label" for="voiceSelect">Voice<select id="voiceSelect"></select></label><div class="action-row"><button class="secondary-button" id="voiceTestButton" type="button">Test voice</button><button class="primary-button" id="voiceChooseButton" type="button">Choose voice</button></div></div></div>' },
   lessons: { kicker: 'Speech mode / 03', title: 'See it. Hear it. Try it.', lede: 'Practice each mouth movement in a word, then listen at a speed that feels comfortable.', body: '<div class="lesson-controls"><label class="field-label" for="lessonSet">Word set<select id="lessonSet"></select></label><label class="field-label" for="lessonSpeed">Playback speed<select id="lessonSpeed"><option value="0.25">0.25x very slow</option><option value="0.5">0.5x slower</option><option value="1" selected>1x normal</option><option value="1.5">1.5x faster</option><option value="2">2x fastest</option></select></label></div><div class="mouth-lesson" aria-live="polite"><div class="mouth-preview"><div class="mouth-demo" id="mouthDemo" aria-label="Mouth formation for the current sound"><span class="mouth-lips"></span><span class="mouth-teeth"></span><span class="mouth-tongue"></span></div><div class="mouth-legend" aria-label="Mouth formation color legend"><span><i class="legend-swatch legend-mouth"></i>Red - mouth</span><span><i class="legend-swatch legend-tongue"></i>Pink - tongue</span><span><i class="legend-swatch legend-lips"></i>Grey - lips</span></div></div><div class="lesson-parts" id="lessonParts"></div></div><div class="tool-card"><div class="memory-game-heading"><h4 id="lessonWord">Mango</h4><span id="lessonProgress">1 of 20</span></div><p id="lessonPartHint">Select a sound part to see how the mouth moves.</p><div class="action-row"><button class="primary-button" data-action="speak-lesson" type="button">Play word aloud</button><button class="secondary-button" data-action="next-lesson" type="button">Next word</button></div></div>' },
 };
 
@@ -85,7 +136,27 @@ let itemRoundItems = [];
 let itemRoundFound = [];
 let itemTimer;
 let itemGameOver = false;
-const HIGH_SCORE_KEYS = { number: 'openpath-highscore-number', items: 'openpath-highscore-items' };
+const HIGH_SCORE_KEYS = { number: 'openpath-highscore-number', items: 'openpath-highscore-items', motor: 'openpath-highscore-motor', draw: 'openpath-highscore-draw' };
+let motorLevel = 1;
+let motorHits = 0;
+let motorLevelHits = 0;
+let motorStrikes = 0;
+const MOTOR_MAX_STRIKES = 5;
+const MOTOR_LEVEL_SECONDS = 30;
+const MOTOR_LEVEL_PAUSE_MS = 2600;
+let motorGameActive = false;
+let motorLevelInterval;
+let motorMoleTimer;
+const MOTOR_DRAW_LEVELS = 6;
+let motorDrawActive = false;
+let motorDrawLevel = 1;
+let motorDrawPhase = 'idle';
+let motorDrawTargetPath = [];
+let motorDrawUserPoints = [];
+let motorDrawDrawing = false;
+let motorDrawLastPixel = null;
+let motorDrawPhaseInterval;
+let motorDrawPhaseTimer;
 const LOSE_ENCOURAGEMENTS = ['Nice effort!', 'Good try!', 'So close!', 'Keep going!', 'Great attempt!'];
 function getHighScore(game) { return Number(localStorage.getItem(HIGH_SCORE_KEYS[game])) || 0; }
 function setHighScore(game, score) { localStorage.setItem(HIGH_SCORE_KEYS[game], String(score)); }
@@ -103,6 +174,320 @@ function buildScoreOutcome(game, score, unitWord) {
 }
 function updateGameBestDisplay() { const el = $('#gameBest'); if (el) el.textContent = `Best: ${pluralize(getHighScore('number'), 'digit')}`; }
 function updateItemBestDisplay() { const el = $('#itemBest'); if (el) el.textContent = `Best: ${getHighScore('items')} / 10`; }
+function updateMotorBestDisplay() { const el = $('#motorBest'); if (el) el.textContent = `Best: ${pluralize(getHighScore('motor'), 'mole')}`; }
+function updateMotorStrikeDisplay() { const el = $('#motorStrikes'); if (el) el.textContent = `Strikes: ${motorStrikes} / ${MOTOR_MAX_STRIKES}`; }
+// Moles show for less time each level: level 1 gives almost 1.5s, level 10 drops to under half a second.
+function motorMoleDurationForLevel(level) { return Math.max(450, 1450 - (level - 1) * 110); }
+function clearMotorTimers() { window.clearInterval(motorLevelInterval); window.clearTimeout(motorMoleTimer); motorLevelInterval = undefined; motorMoleTimer = undefined; }
+function updateMotorHud(secondsLeft) { const levelLabel = $('#motorLevelLabel'); if (levelLabel) levelLabel.textContent = `Level ${motorLevel} of 10`; const clock = $('#motorClock'); if (clock) clock.textContent = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, '0')}`; }
+function spawnMotorMole() {
+  const board = $('#motorBoard');
+  if (!board || !motorGameActive) return;
+  board.innerHTML = '';
+  const mole = document.createElement('button');
+  mole.type = 'button';
+  mole.className = 'mole';
+  mole.setAttribute('aria-label', 'Whack the mole');
+  mole.textContent = '\u{1F439}';
+  mole.style.left = `${6 + Math.random() * 82}%`;
+  mole.style.top = `${6 + Math.random() * 70}%`;
+  board.appendChild(mole);
+  requestAnimationFrame(() => mole.classList.add('is-visible'));
+  motorMoleTimer = window.setTimeout(() => { if (mole.isConnected) mole.remove(); registerMotorMiss(); }, motorMoleDurationForLevel(motorLevel));
+}
+function registerMotorMiss() {
+  if (!motorGameActive) return;
+  motorStrikes += 1;
+  updateMotorStrikeDisplay();
+  if (motorStrikes >= MOTOR_MAX_STRIKES) { endMotorGame(false); return; }
+  setFeedback('#motorResult', `Missed! That's strike ${motorStrikes} of ${MOTOR_MAX_STRIKES}.`, 'is-warning');
+  spawnMotorMole();
+}
+function handleMotorBoardPointerDown(event) {
+  if (!motorGameActive) return;
+  const mole = event.target.closest('.mole');
+  if (!mole) return;
+  event.preventDefault();
+  motorHits += 1;
+  motorLevelHits += 1;
+  window.clearTimeout(motorMoleTimer);
+  mole.remove();
+  setFeedback('#motorResult', 'Whacked!', 'is-success');
+  spawnMotorMole();
+}
+function startMotorLevel() {
+  clearMotorTimers();
+  motorLevelHits = 0;
+  const board = $('#motorBoard'); if (board) board.innerHTML = '';
+  updateMotorHud(MOTOR_LEVEL_SECONDS);
+  setFeedback('#motorResult', '');
+  runMotorCountdown(3);
+}
+// Counts 3, 2, 1, Go! before moles start spawning so the player isn't caught off guard on the first mole.
+function runMotorCountdown(remaining) {
+  if (!motorGameActive) return;
+  const prompt = $('#motorPrompt');
+  if (remaining > 0) {
+    if (prompt) prompt.textContent = `Level ${motorLevel} starts in ${remaining}...`;
+    showMotorCountdownOverlay(String(remaining), false);
+    motorMoleTimer = window.setTimeout(() => runMotorCountdown(remaining - 1), 800);
+    return;
+  }
+  if (prompt) prompt.textContent = `Level ${motorLevel}: get ready!`;
+  showMotorCountdownOverlay('Go!', true);
+  motorMoleTimer = window.setTimeout(beginMotorLevelPlay, 500);
+}
+// Replaces the board with a large, animated number/word so the countdown is impossible to miss.
+function showMotorCountdownOverlay(text, isGo) {
+  const board = $('#motorBoard');
+  if (!board) return;
+  board.innerHTML = `<div class="motor-countdown ${isGo ? 'is-go' : ''}">${text}</div>`;
+}
+function beginMotorLevelPlay() {
+  if (!motorGameActive) return;
+  let secondsLeft = MOTOR_LEVEL_SECONDS;
+  updateMotorHud(secondsLeft);
+  const prompt = $('#motorPrompt'); if (prompt) prompt.textContent = `Level ${motorLevel}: whack as many moles as you can in 30 seconds.`;
+  spawnMotorMole();
+  motorLevelInterval = window.setInterval(() => {
+    secondsLeft -= 1;
+    updateMotorHud(secondsLeft);
+    if (secondsLeft <= 0) advanceMotorLevel();
+  }, 1000);
+}
+function advanceMotorLevel() {
+  clearMotorTimers();
+  const board = $('#motorBoard'); if (board) board.innerHTML = '';
+  if (motorLevel >= 10) { endMotorGame(true); return; }
+  const levelJustFinished = motorLevel;
+  const levelHits = motorLevelHits;
+  setFeedback('#motorResult', '', '');
+  const prompt = $('#motorPrompt'); if (prompt) prompt.textContent = `Level ${levelJustFinished} complete! You whacked ${pluralize(levelHits, 'mole')} this level (${pluralize(motorHits, 'mole')} total). Get ready for level ${levelJustFinished + 1}...`;
+  motorMoleTimer = window.setTimeout(() => { motorLevel = levelJustFinished + 1; startMotorLevel(); }, MOTOR_LEVEL_PAUSE_MS);
+}
+function startMotorGame() {
+  motorLevel = 1;
+  motorHits = 0;
+  motorLevelHits = 0;
+  motorStrikes = 0;
+  motorGameActive = true;
+  updateMotorStrikeDisplay();
+  const gameOver = $('#motorGameOver'); if (gameOver) { gameOver.hidden = true; gameOver.classList.remove('is-celebration'); }
+  setFeedback('#motorResult', '');
+  startMotorLevel();
+}
+function endMotorGame(completedAllLevels) {
+  motorGameActive = false;
+  clearMotorTimers();
+  const board = $('#motorBoard'); if (board) board.innerHTML = '';
+  const outcome = buildScoreOutcome('motor', motorHits, 'mole');
+  updateMotorBestDisplay();
+  const panel = $('#motorGameOver'); if (!panel) return;
+  panel.classList.toggle('is-celebration', completedAllLevels || outcome.headline === 'New high score!');
+  const titleEl = $('#motorGameOverTitle'); const detailEl = $('#motorGameOverDetail'); const scoreEl = $('#motorGameOverScore');
+  if (titleEl) titleEl.textContent = completedAllLevels ? 'All levels complete!' : 'Game Over';
+  if (detailEl) detailEl.textContent = completedAllLevels ? `You cleared all 10 levels and whacked ${pluralize(motorHits, 'mole')}.` : `You ran out of strikes on level ${motorLevel}. You whacked ${pluralize(motorHits, 'mole')} before running out.`;
+  if (scoreEl) scoreEl.innerHTML = `<strong>${outcome.headline}</strong> ${outcome.detail}`;
+  panel.hidden = false;
+  const prompt = $('#motorPrompt'); if (prompt) prompt.textContent = 'Your run has ended.';
+  setFeedback('#motorResult', '');
+}
+// Motor game 2: Precision drawing. Study a randomized guide shape, then trace over it from memory of its exact path within a shrinking window.
+function drawStudySeconds(level) { return Math.max(5, 10 - (level - 1)); }
+function drawTimeSeconds(level) { return Math.max(12, 30 - (level - 1) * 4); }
+function drawToleranceRatio(level) { return Math.max(0.028, 0.065 - (level - 1) * 0.008); }
+function drawGuideWidth(level) { return Math.max(10, 26 - (level - 1) * 3); }
+// Builds a random polyline of straight segments between random control points, so every attempt is a new scribble shape.
+function generateDrawingPath(level) {
+  const controlCount = 3 + level;
+  const controls = Array.from({ length: controlCount }, () => ({ x: 12 + Math.random() * 76, y: 12 + Math.random() * 76 }));
+  const path = [];
+  const segments = 16;
+  for (let i = 0; i < controls.length - 1; i += 1) {
+    const a = controls[i]; const b = controls[i + 1];
+    for (let s = 0; s <= segments; s += 1) { const t = s / segments; path.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }); }
+  }
+  return path;
+}
+function sizeDrawCanvas() {
+  const canvas = $('#drawCanvas');
+  if (!canvas) return null;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = Math.max(1, Math.round(rect.width));
+  canvas.height = Math.max(1, Math.round(rect.height));
+  return canvas;
+}
+function pctToPxPath(path, canvas) { return path.map((p) => ({ x: (p.x / 100) * canvas.width, y: (p.y / 100) * canvas.height })); }
+function drawPolyline(ctx, points, color, width) {
+  if (points.length < 2) return;
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i += 1) ctx.lineTo(points[i].x, points[i].y);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+}
+function renderDrawBoard() {
+  const canvas = $('#drawCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawPolyline(ctx, pctToPxPath(motorDrawTargetPath, canvas), 'rgba(22, 125, 120, 0.35)', drawGuideWidth(motorDrawLevel));
+  drawPolyline(ctx, pctToPxPath(motorDrawUserPoints, canvas), '#e2735b', 4);
+}
+// Scores accuracy as the average of recall (how much of the guide got traced) and precision (how much of the trace stayed on the guide).
+function computeDrawingAccuracy(userPoints, targetPoints, toleranceRadius) {
+  if (!userPoints.length || !targetPoints.length || toleranceRadius <= 0) return 0;
+  const covered = targetPoints.filter((t) => userPoints.some((u) => Math.hypot(u.x - t.x, u.y - t.y) <= toleranceRadius)).length;
+  const recall = covered / targetPoints.length;
+  const onTarget = userPoints.filter((u) => targetPoints.some((t) => Math.hypot(u.x - t.x, u.y - t.y) <= toleranceRadius)).length;
+  const precision = onTarget / userPoints.length;
+  return Math.round(((recall + precision) / 2) * 100);
+}
+function updateDrawBestDisplay() { const el = $('#drawBest'); if (el) el.textContent = `Best: ${pluralize(getHighScore('draw'), 'level')} cleared`; }
+function updateDrawHud(phaseLabel, secondsLeft) {
+  const levelLabel = $('#drawLevelLabel'); if (levelLabel) levelLabel.textContent = `Level ${motorDrawLevel} of ${MOTOR_DRAW_LEVELS}`;
+  const clock = $('#drawClock'); if (clock) clock.textContent = `${phaseLabel}: ${Math.max(0, secondsLeft)}s`;
+  const badge = $('#drawPhaseBadge'); if (badge) badge.textContent = phaseLabel === 'Study' ? `Study the shape - ${Math.max(0, secondsLeft)}s left` : `Trace it now! - ${Math.max(0, secondsLeft)}s left`;
+}
+// Restarts the badge pop animation only when the phase itself changes, not on every countdown tick.
+function setDrawPhaseBadge(tone) {
+  const badge = $('#drawPhaseBadge');
+  if (!badge) return;
+  badge.classList.remove('is-study', 'is-draw', 'is-pop');
+  void badge.offsetWidth;
+  badge.classList.add(tone, 'is-pop');
+}
+function showDrawPassOverlay(level, accuracy) { const overlay = $('#drawPassOverlay'); if (!overlay) return; overlay.innerHTML = `<strong>Level ${level} passed!</strong><span>Accuracy: ${accuracy}%</span>`; overlay.hidden = false; }
+function hideDrawPassOverlay() { const overlay = $('#drawPassOverlay'); if (overlay) overlay.hidden = true; }
+function clearDrawTimers() { window.clearInterval(motorDrawPhaseInterval); window.clearTimeout(motorDrawPhaseTimer); motorDrawPhaseInterval = undefined; motorDrawPhaseTimer = undefined; }
+function startDrawGame() {
+  motorDrawLevel = 1;
+  motorDrawActive = true;
+  const gameOver = $('#drawGameOver'); if (gameOver) { gameOver.hidden = true; gameOver.classList.remove('is-celebration'); }
+  setFeedback('#drawResult', '');
+  startDrawLevel();
+}
+function startDrawLevel() {
+  clearDrawTimers();
+  hideDrawPassOverlay();
+  motorDrawUserPoints = [];
+  motorDrawLastPixel = null;
+  motorDrawDrawing = false;
+  motorDrawPhase = 'study';
+  motorDrawTargetPath = generateDrawingPath(motorDrawLevel);
+  sizeDrawCanvas();
+  renderDrawBoard();
+  setDrawPhaseBadge('is-study');
+  const prompt = $('#drawPrompt'); if (prompt) prompt.textContent = `Level ${motorDrawLevel}: study the shape.`;
+  let secondsLeft = drawStudySeconds(motorDrawLevel);
+  updateDrawHud('Study', secondsLeft);
+  motorDrawPhaseInterval = window.setInterval(() => {
+    secondsLeft -= 1;
+    updateDrawHud('Study', secondsLeft);
+    if (secondsLeft <= 0) { clearDrawTimers(); beginDrawPhase(); }
+  }, 1000);
+}
+function beginDrawPhase() {
+  if (!motorDrawActive) return;
+  motorDrawPhase = 'draw';
+  setDrawPhaseBadge('is-draw');
+  const prompt = $('#drawPrompt'); if (prompt) prompt.textContent = `Level ${motorDrawLevel}: trace the shape now!`;
+  let secondsLeft = drawTimeSeconds(motorDrawLevel);
+  updateDrawHud('Draw', secondsLeft);
+  motorDrawPhaseInterval = window.setInterval(() => {
+    secondsLeft -= 1;
+    updateDrawHud('Draw', secondsLeft);
+    if (secondsLeft <= 0) { clearDrawTimers(); confirmDrawing(); }
+  }, 1000);
+}
+function handleDrawPointerDown(event) {
+  if (!motorDrawActive || motorDrawPhase !== 'draw') return;
+  const canvas = $('#drawCanvas'); if (!canvas) return;
+  event.preventDefault();
+  canvas.setPointerCapture(event.pointerId);
+  motorDrawDrawing = true;
+  motorDrawLastPixel = null;
+  addDrawPoint(event, canvas);
+}
+function handleDrawPointerMove(event) { if (!motorDrawDrawing) return; const canvas = $('#drawCanvas'); if (!canvas) return; addDrawPoint(event, canvas); }
+function handleDrawPointerUp() { motorDrawDrawing = false; motorDrawLastPixel = null; }
+// Interpolates between recorded pointer positions so fast strokes still produce enough sample points for accurate scoring.
+function addDrawPoint(event, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const xPx = event.clientX - rect.left;
+  const yPx = event.clientY - rect.top;
+  if (motorDrawLastPixel) {
+    const steps = Math.max(1, Math.ceil(Math.hypot(xPx - motorDrawLastPixel.x, yPx - motorDrawLastPixel.y) / 4));
+    for (let i = 1; i <= steps; i += 1) {
+      const t = i / steps;
+      const stepX = motorDrawLastPixel.x + (xPx - motorDrawLastPixel.x) * t;
+      const stepY = motorDrawLastPixel.y + (yPx - motorDrawLastPixel.y) * t;
+      motorDrawUserPoints.push({ x: (stepX / canvas.width) * 100, y: (stepY / canvas.height) * 100 });
+    }
+  } else {
+    motorDrawUserPoints.push({ x: (xPx / canvas.width) * 100, y: (yPx / canvas.height) * 100 });
+  }
+  motorDrawLastPixel = { x: xPx, y: yPx };
+  renderDrawBoard();
+}
+function clearDrawStroke() {
+  if (!motorDrawActive || motorDrawPhase !== 'draw') { setFeedback('#drawResult', 'Wait for the drawing phase to start.', 'is-warning'); return; }
+  motorDrawUserPoints = [];
+  motorDrawLastPixel = null;
+  renderDrawBoard();
+  setFeedback('#drawResult', 'Drawing cleared. Try again!', '');
+}
+function confirmDrawing() {
+  if (!motorDrawActive) return;
+  if (motorDrawPhase !== 'draw') { setFeedback('#drawResult', 'Wait for the drawing phase to start.', 'is-warning'); return; }
+  clearDrawTimers();
+  motorDrawDrawing = false;
+  motorDrawPhase = 'result';
+  const canvas = $('#drawCanvas');
+  const targetPx = canvas ? pctToPxPath(motorDrawTargetPath, canvas) : [];
+  const userPx = canvas ? pctToPxPath(motorDrawUserPoints, canvas) : [];
+  const tolerancePx = canvas ? drawToleranceRatio(motorDrawLevel) * Math.min(canvas.width, canvas.height) : 0;
+  const accuracy = computeDrawingAccuracy(userPx, targetPx, tolerancePx);
+  if (accuracy >= 90) {
+    if (motorDrawLevel >= MOTOR_DRAW_LEVELS) { endDrawGame(true, accuracy); return; }
+    const clearedLevel = motorDrawLevel;
+    setFeedback('#drawResult', '', '');
+    showDrawPassOverlay(clearedLevel, accuracy);
+    const prompt = $('#drawPrompt'); if (prompt) prompt.textContent = `Level ${clearedLevel} complete! Accuracy: ${accuracy}%. Get ready for level ${clearedLevel + 1}...`;
+    motorDrawPhaseTimer = window.setTimeout(() => { motorDrawLevel = clearedLevel + 1; startDrawLevel(); }, MOTOR_LEVEL_PAUSE_MS);
+  } else {
+    endDrawGame(false, accuracy);
+  }
+}
+function endDrawGame(completedAll, finalAccuracy) {
+  motorDrawActive = false;
+  clearDrawTimers();
+  const levelsCleared = completedAll ? MOTOR_DRAW_LEVELS : motorDrawLevel - 1;
+  const outcome = buildScoreOutcome('draw', levelsCleared, 'level');
+  updateDrawBestDisplay();
+  const panel = $('#drawGameOver'); if (!panel) return;
+  panel.classList.toggle('is-celebration', completedAll || outcome.headline === 'New high score!');
+  const titleEl = $('#drawGameOverTitle'); const detailEl = $('#drawGameOverDetail'); const scoreEl = $('#drawGameOverScore');
+  if (titleEl) titleEl.textContent = completedAll ? 'All levels complete!' : 'Round Over';
+  if (detailEl) detailEl.textContent = completedAll ? `You cleared all ${MOTOR_DRAW_LEVELS} levels with a final accuracy of ${finalAccuracy}%.` : `You reached level ${motorDrawLevel} with ${finalAccuracy}% accuracy (90% needed to advance). You cleared ${pluralize(levelsCleared, 'level')} in total.`;
+  if (scoreEl) scoreEl.innerHTML = `<strong>${outcome.headline}</strong> ${outcome.detail}`;
+  panel.hidden = false;
+  const prompt = $('#drawPrompt'); if (prompt) prompt.textContent = 'Your run has ended.';
+  setFeedback('#drawResult', '');
+  const badge = $('#drawPhaseBadge'); if (badge) { badge.textContent = ''; badge.className = 'draw-phase-badge'; }
+}
+function selectMotorGame(game) {
+  if (motorGameActive) { motorGameActive = false; clearMotorTimers(); }
+  if (motorDrawActive) { motorDrawActive = false; clearDrawTimers(); }
+  document.querySelectorAll('[data-motor-game]').forEach((button) => button.classList.toggle('is-selected', button.dataset.motorGame === game));
+  const whackGame = $('#motorWhackGame'); const drawGame = $('#motorDrawGame');
+  if (!whackGame || !drawGame) return;
+  whackGame.hidden = game !== 'whack';
+  drawGame.hidden = game !== 'draw';
+}
 const reminderTimers = new Map();
 let alarmInterval;
 let alarmTimeout;
@@ -285,7 +670,19 @@ const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 
 function showToast(message) { const toast = $('#toast'); toast.textContent = message; toast.classList.add('is-visible'); window.clearTimeout(showToast.timeout); showToast.timeout = window.setTimeout(() => toast.classList.remove('is-visible'), 3200); }
-function speak(text, rate = 1) { if (!('speechSynthesis' in window)) { showToast('Speech output is not supported in this browser.'); return; } window.speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance(text); const requestedRate = Number(rate); utterance.rate = requestedRate < 1 ? requestedRate * requestedRate : requestedRate; window.speechSynthesis.speak(utterance); }
+function speak(text, rate = 1, voiceProfileId = null) { if (!('speechSynthesis' in window)) { showToast('Speech output is not supported in this browser.'); return; } window.speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance(text); const profile = voiceProfileId ? getVoiceProfile(voiceProfileId) : null; const requestedRate = Number(rate) * (profile ? profile.rate : 1); utterance.rate = requestedRate < 1 ? requestedRate * requestedRate : requestedRate; if (profile) { utterance.pitch = profile.pitch; const assignedVoice = voiceRoster && voiceRoster[profile.id]; if (assignedVoice) utterance.voice = assignedVoice; } window.speechSynthesis.speak(utterance); }
+function updateVoiceChooseButton() { const select = $('#voiceSelect'); const chooseButton = $('#voiceChooseButton'); if (!select || !chooseButton) return; const isConfirmed = select.value === getLockedVoiceId(); chooseButton.textContent = isConfirmed ? 'Confirmed voice' : 'Choose voice'; chooseButton.disabled = isConfirmed; }
+function renderVoicePicker() {
+  const select = $('#voiceSelect');
+  if (!select) return;
+  const lockedId = getLockedVoiceId();
+  const lockedProfile = getVoiceProfile(lockedId);
+  const lockedLabel = $('#voiceLockedLabel');
+  if (lockedLabel) lockedLabel.textContent = lockedProfile ? `Chosen voice: ${lockedProfile.label}` : 'No voice chosen yet. The default browser voice will be used until you choose one.';
+  if (!select.options.length) select.innerHTML = VOICE_PROFILES.map((profile) => `<option value="${profile.id}">${profile.label} (${profile.gender === 'feminine' ? 'Feminine' : 'Masculine'})</option>`).join('');
+  select.value = lockedId && getVoiceProfile(lockedId) ? lockedId : VOICE_PROFILES[0].id;
+  updateVoiceChooseButton();
+}
 function renderFeatureList() { const list = $('#featureList'); list.innerHTML = modes[activeMode].features.map(([id, label]) => `<button class="feature-button ${id === activeFeature ? 'is-active' : ''}" data-feature="${id}" type="button">${label}</button>`).join(''); $('#modeTitle').textContent = modes[activeMode].title; }
 function renderContent() { const feature = featureContent[activeFeature]; $('#featureContent').innerHTML = `<p class="feature-kicker">${feature.kicker}</p><h3>${feature.title}</h3><p class="feature-lede">${feature.lede}</p>${feature.body}`; bindFeatureEvents(); }
 function showScreen(name) { document.querySelectorAll('.screen').forEach((screen) => { screen.hidden = screen.id !== `screen${name}`; }); window.scrollTo(0, 0); }
@@ -297,15 +694,69 @@ function selectFeature(feature) { activeFeature = feature; renderFeatureList(); 
 function getStoredItems(key) { return JSON.parse(localStorage.getItem(key) || '[]'); }
 function renderStoredList(key, target, emptyText) { const items = getStoredItems(key); const element = $(target); if (!element) return; element.innerHTML = items.length ? items.map((item) => { const phraseButton = key === 'openpath-phrases' ? `<button class="quick-response saved-quick-response" data-speak-saved="${escapeHtml(item.name)}" type="button">${escapeHtml(item.name)}</button>` : `<strong>${escapeHtml(item.name)}</strong>`; return `<div class="result"><span>${phraseButton}<small>${escapeHtml(item.detail)}</small></span><button class="secondary-button" data-remove="${key}:${item.id}" type="button">Remove</button></div>`; }).join('') : `<p class="feature-lede">${emptyText}</p>`; }
 function saveStored(key, name, detail, time, dose) { const items = getStoredItems(key); items.push({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name, detail, time, dose }); localStorage.setItem(key, JSON.stringify(items)); }
-function playAlarmSound() { const AudioContextClass = window.AudioContext || window.webkitAudioContext; if (!AudioContextClass) return; const ctx = new AudioContextClass(); const beepCount = 3; for (let i = 0; i < beepCount; i += 1) { const start = ctx.currentTime + i * 0.5; const oscillator = ctx.createOscillator(); const gain = ctx.createGain(); oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(880, start); gain.gain.setValueAtTime(0.2, start); gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35); oscillator.connect(gain); gain.connect(ctx.destination); oscillator.start(start); oscillator.stop(start + 0.35); } window.setTimeout(() => ctx.close(), (beepCount * 0.5 + 0.5) * 1000); }
+// One shared, reused AudioContext instead of creating a new one per beep: mobile browsers cap how many
+// contexts can exist, and a fresh context created outside a user gesture is born suspended (silent) on phones.
+let sharedAudioContext;
+function getAudioContext() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return null;
+  if (!sharedAudioContext) sharedAudioContext = new AudioContextClass();
+  return sharedAudioContext;
+}
+// Mobile browsers block audio playback until a real tap unlocks it; unlock our shared context on the user's first tap anywhere in the app.
+function unlockAudioContext() { const ctx = getAudioContext(); if (ctx && ctx.state === 'suspended') ctx.resume(); }
+document.addEventListener('pointerdown', unlockAudioContext, { once: true });
+function playAlarmSound() {
+  const ctx = getAudioContext();
+  if (ctx && ctx.state === 'suspended') ctx.resume();
+  if (ctx) {
+    const beepCount = 3;
+    for (let i = 0; i < beepCount; i += 1) {
+      const start = ctx.currentTime + i * 0.5;
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, start);
+      gain.gain.setValueAtTime(0.2, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+      oscillator.start(start);
+      oscillator.stop(start + 0.35);
+    }
+  }
+  // Vibration works even when a phone is on silent or audio playback is still blocked.
+  if ('vibrate' in navigator) navigator.vibrate([300, 150, 300, 150, 300]);
+}
 function showAlarmBanner(message) { const banner = $('#alarmBanner'); if (!banner) return; $('#alarmMessage').textContent = message; banner.hidden = false; }
 function hideAlarmBanner() { const banner = $('#alarmBanner'); if (banner) banner.hidden = true; }
 function stopAlarm() { window.clearInterval(alarmInterval); window.clearTimeout(alarmTimeout); alarmInterval = undefined; alarmTimeout = undefined; hideAlarmBanner(); }
 function startAlarm(message) { stopAlarm(); playAlarmSound(); alarmInterval = window.setInterval(playAlarmSound, 2000); alarmTimeout = window.setTimeout(stopAlarm, 10 * 60 * 1000); showAlarmBanner(message); }
-function notifyReminder(reminder) { const doseText = reminder.dose ? ` (${reminder.dose})` : ''; const message = `${reminder.name}${doseText} is due now.`; startAlarm(message); showToast(message); if ('Notification' in window && Notification.permission === 'granted') new Notification('Disability App reminder', { body: message, silent: true }); }
-function scheduleReminder(key, reminder) { if (!reminder.time) return; const timerKey = `${key}:${reminder.id}`; window.clearTimeout(reminderTimers.get(timerKey)); const [hours, minutes] = reminder.time.split(':').map(Number); const now = new Date(); const next = new Date(now); next.setHours(hours, minutes, 0, 0); if (next <= now) next.setDate(next.getDate() + 1); const timer = window.setTimeout(() => { notifyReminder(reminder); scheduleReminder(key, reminder); }, next.getTime() - now.getTime()); reminderTimers.set(timerKey, timer); }
+function notifyReminder(reminder) { const doseText = reminder.dose ? ` (${reminder.dose})` : ''; const message = `${reminder.name}${doseText} is due now.`; startAlarm(message); showToast(message); if ('Notification' in window && Notification.permission === 'granted') new Notification('Stability reminder', { body: message, silent: true }); }
+function scheduleReminder(key, reminder) { if (!reminder.time) return; const timerKey = `${key}:${reminder.id}`; window.clearTimeout(reminderTimers.get(timerKey)); const [hours, minutes] = reminder.time.split(':').map(Number); const now = new Date(); const next = new Date(now); next.setHours(hours, minutes, 0, 0); if (next <= now) next.setDate(next.getDate() + 1); const timer = window.setTimeout(() => { notifyReminder(reminder); markReminderFiredToday(key, reminder.id); scheduleReminder(key, reminder); }, next.getTime() - now.getTime()); reminderTimers.set(timerKey, timer); }
 function scheduleStoredReminders() { ['openpath-routines', 'openpath-meds'].forEach((key) => getStoredItems(key).forEach((reminder) => scheduleReminder(key, reminder))); }
 async function requestReminderPermission() { if (!('Notification' in window)) return; if (Notification.permission === 'default') await Notification.requestPermission(); }
+// Phones frequently suspend background timers while the screen is locked or the app is minimized, so a setTimeout
+// scheduled for the exact due time can be delayed or dropped. As a safety net, re-check every reminder against the
+// clock whenever the page becomes visible again (or first loads), and fire any reminder that is due but was not
+// already fired today.
+function todayStamp() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; }
+function reminderFiredKey(key, id) { return `openpath-fired-${key}-${id}`; }
+function markReminderFiredToday(key, id) { localStorage.setItem(reminderFiredKey(key, id), todayStamp()); }
+function wasReminderFiredToday(key, id) { return localStorage.getItem(reminderFiredKey(key, id)) === todayStamp(); }
+function checkDueReminders() {
+  ['openpath-routines', 'openpath-meds'].forEach((key) => {
+    getStoredItems(key).forEach((reminder) => {
+      if (!reminder.time || wasReminderFiredToday(key, reminder.id)) return;
+      const [hours, minutes] = reminder.time.split(':').map(Number);
+      const now = new Date();
+      const scheduledToday = new Date(now); scheduledToday.setHours(hours, minutes, 0, 0);
+      if (now >= scheduledToday) { notifyReminder(reminder); markReminderFiredToday(key, reminder.id); scheduleReminder(key, reminder); }
+    });
+  });
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkDueReminders(); });
+window.addEventListener('pageshow', checkDueReminders);
 const TOUCH_SCALE_KEY = 'openpath-touch-scale';
 const TOUCH_SCALE_MIN = 100;
 const TOUCH_SCALE_MAX = 160;
@@ -313,6 +764,8 @@ const TOUCH_SCALE_STEP = 10;
 function getTouchScale() { const stored = Number(localStorage.getItem(TOUCH_SCALE_KEY)); return stored >= TOUCH_SCALE_MIN && stored <= TOUCH_SCALE_MAX ? stored : TOUCH_SCALE_MIN; }
 function applyTouchScale(percent) { document.documentElement.style.setProperty('--touch-scale', percent / 100); localStorage.setItem(TOUCH_SCALE_KEY, String(percent)); }
 function bindFeatureEvents() {
+  if (activeFeature !== 'motorGames' && motorGameActive) { motorGameActive = false; clearMotorTimers(); }
+  if (activeFeature !== 'motorGames' && motorDrawActive) { motorDrawActive = false; clearDrawTimers(); }
   document.querySelectorAll('[data-action="find-cognitive"]').forEach((button) => button.addEventListener('click', () => { const query = $('#placeSearch').value.trim() || 'your area'; $('#placeResults').innerHTML = `<div class="result"><span><strong>Quiet ${escapeHtml(query)} options</strong><small>Lower sensory load, clear information, and a calmer pace are the details to check.</small></span><strong>Review</strong></div>`; }));
   document.querySelectorAll('[data-action="find-speech"]').forEach((button) => button.addEventListener('click', () => { const query = $('#speechSearch').value.trim() || 'nearby'; $('#speechResults').innerHTML = `<div class="result"><span><strong>Accessible ${escapeHtml(query)} options</strong><small>Look for written communication, patient service, and non-verbal ways to complete tasks.</small></span><strong>Review</strong></div>`; }));
   const routineForm = $('#routineForm'); if (routineForm) { renderStoredList('openpath-routines', '#routineResults', 'No routines yet. Add one above to keep the next step visible.'); routineForm.addEventListener('submit', async (event) => { event.preventDefault(); const data = new FormData(routineForm); const time = data.get('time'); saveStored('openpath-routines', data.get('name'), `Reminder at ${time}`, time); scheduleStoredReminders(); await requestReminderPermission(); renderStoredList('openpath-routines', '#routineResults', 'No routines yet.'); showToast('Routine reminder saved on this device.'); }); }
@@ -337,15 +790,39 @@ function bindFeatureEvents() {
   }
   updateGameBestDisplay();
   updateItemBestDisplay();
+  updateMotorBestDisplay();
+  document.querySelectorAll('[data-motor-game]').forEach((button) => button.addEventListener('click', () => selectMotorGame(button.dataset.motorGame)));
+  const motorBoard = $('#motorBoard');
+  if (motorBoard) {
+    motorBoard.addEventListener('pointerdown', handleMotorBoardPointerDown);
+    document.querySelectorAll('[data-action="start-motor"]').forEach((button) => button.addEventListener('click', startMotorGame));
+  }
+  const drawCanvas = $('#drawCanvas');
+  if (drawCanvas) {
+    updateDrawBestDisplay();
+    drawCanvas.addEventListener('pointerdown', handleDrawPointerDown);
+    drawCanvas.addEventListener('pointermove', handleDrawPointerMove);
+    drawCanvas.addEventListener('pointerup', handleDrawPointerUp);
+    drawCanvas.addEventListener('pointercancel', handleDrawPointerUp);
+    document.querySelectorAll('[data-action="start-draw"]').forEach((button) => button.addEventListener('click', startDrawGame));
+    document.querySelectorAll('[data-action="clear-draw"]').forEach((button) => button.addEventListener('click', clearDrawStroke));
+    document.querySelectorAll('[data-action="confirm-draw"]').forEach((button) => button.addEventListener('click', confirmDrawing));
+  }
   document.querySelectorAll('[data-action="start-game"]').forEach((button) => button.addEventListener('click', () => { gameLength = 4; startMemoryRound(); }));
   const gameAnswer = $('#gameAnswer'); if (gameAnswer) { gameAnswer.addEventListener('input', () => { if (!gamePattern.length) return; hideMemorySequence(); const answer = gameAnswer.value.replace(/\D/g, '').slice(0, gamePattern.length); gameAnswer.value = answer; if (answer.length !== gamePattern.length) return; if (answer === gamePattern.join('')) { gameLength += 1; startMemoryRound(`Correct! Now try ${gameLength} numbers.`, 'is-success'); } else { const achieved = gameLength > 4 ? gameLength - 1 : 0; endNumberRound(achieved); gameLength = 4; } }); }
   document.querySelectorAll('[data-game]').forEach((button) => button.addEventListener('click', () => selectGame(button.dataset.game)));
   document.querySelectorAll('[data-action="start-items"]').forEach((button) => button.addEventListener('click', startItemRecallRound));
   const itemRecallForm = $('#itemRecallForm'); if (itemRecallForm) itemRecallForm.addEventListener('submit', submitItemRecall);
   document.querySelectorAll('.quick-response').forEach((button) => button.addEventListener('click', () => { $('#speechText').value = button.dataset.phrase; }));
-  document.querySelectorAll('[data-action="speak-text"]').forEach((button) => button.addEventListener('click', () => speak($('#speechText').value.trim() || 'Please give me a moment.')));
+  document.querySelectorAll('[data-action="speak-text"]').forEach((button) => button.addEventListener('click', () => speak($('#speechText').value.trim() || 'Please give me a moment.', 1, getLockedVoiceId())));
   document.querySelectorAll('[data-action="save-phrase"]').forEach((button) => button.addEventListener('click', () => { const text = $('#speechText').value.trim(); if (!text) { showToast('Type a phrase before saving it.'); return; } saveStored('openpath-phrases', text, 'Custom quick response'); showToast('Quick response saved on this device.'); renderStoredList('openpath-phrases', '#phraseResults', 'Your saved responses will appear here.'); }));
   if ($('#phraseResults')) renderStoredList('openpath-phrases', '#phraseResults', 'Your saved responses will appear here.');
+  if ($('#voiceSelect')) {
+    renderVoicePicker();
+    $('#voiceSelect').addEventListener('change', updateVoiceChooseButton);
+    $('#voiceTestButton').addEventListener('click', () => speak('Hi, this is how I sound when I speak for you.', 1, $('#voiceSelect').value));
+    $('#voiceChooseButton').addEventListener('click', () => { setLockedVoiceId($('#voiceSelect').value); renderVoicePicker(); const profile = getVoiceProfile($('#voiceSelect').value); showToast(profile ? `${profile.label} chosen as your conversation voice.` : 'Voice chosen.'); });
+  }
   if ($('#lessonSet')) renderLesson();
   document.querySelectorAll('[data-action="speak-lesson"]').forEach((button) => button.addEventListener('click', () => speak(getCurrentLessonWord()[0], $('#lessonSpeed').value)));
   document.querySelectorAll('[data-action="next-lesson"]').forEach((button) => button.addEventListener('click', () => { activeLessonIndex = (activeLessonIndex + 1) % speechLessonSets[activeLessonSet].words.length; activeLessonPart = 0; renderLesson(); showToast('Next practice word loaded.'); }));
@@ -399,7 +876,7 @@ document.addEventListener('click', (event) => { const feature = event.target.clo
 $('#openAppButton').addEventListener('click', openApp);
 document.addEventListener('click', (event) => { const button = event.target.closest('[data-action="back-to-modes"]'); if (button) backToModes(); });
 document.addEventListener('click', (event) => { const button = event.target.closest('[data-action="back-to-features"]'); if (button) backToFeatures(); });
-document.addEventListener('click', (event) => { const button = event.target.closest('[data-speak-saved]'); if (!button) return; $('#speechText').value = button.dataset.speakSaved; speak(button.dataset.speakSaved); });
+document.addEventListener('click', (event) => { const button = event.target.closest('[data-speak-saved]'); if (!button) return; $('#speechText').value = button.dataset.speakSaved; speak(button.dataset.speakSaved, 1, getLockedVoiceId()); });
 document.addEventListener('click', (event) => { const button = event.target.closest('[data-lesson-part]'); if (!button) return; activeLessonPart = Number(button.dataset.lessonPart); renderLesson(); });
 document.addEventListener('click', (event) => { const button = event.target.closest('[data-remove]'); if (!button) return; const [key, id] = button.dataset.remove.split(':'); const items = getStoredItems(key).filter((item) => String(item.id) !== id); localStorage.setItem(key, JSON.stringify(items)); window.clearTimeout(reminderTimers.get(`${key}:${id}`)); reminderTimers.delete(`${key}:${id}`); const targets = { 'openpath-routines': ['#routineResults', 'No routines yet. Add one above to keep the next step visible.'], 'openpath-meds': ['#medResults', 'No medication reminders yet.'], 'openpath-phrases': ['#phraseResults', 'Your saved responses will appear here.'] }; const [target, emptyText] = targets[key] || []; if (target) renderStoredList(key, target, emptyText); showToast(key === 'openpath-phrases' ? 'Quick response removed.' : 'Reminder removed.'); });
 $('#voiceButton').addEventListener('click', startVoiceControl);
@@ -410,3 +887,4 @@ renderFeatureList();
 renderContent();
 showScreen('Splash');
 scheduleStoredReminders();
+checkDueReminders();

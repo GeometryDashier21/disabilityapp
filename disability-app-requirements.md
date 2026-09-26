@@ -1,8 +1,8 @@
-# Disability App Requirements
+# Stability Requirements
 
 ## Problem Statement
 
-The application, named Disability App, will provide people with disabilities different tools and forms of support to make everyday tasks easier. A single app should provide accessible assistance tailored to the user's needs instead of assuming that one experience works for everyone.
+The application, named Stability, will provide people with disabilities different tools and forms of support to make everyday tasks easier. A single app should provide accessible assistance tailored to the user's needs instead of assuming that one experience works for everyone.
 
 ## Goals
 
@@ -13,6 +13,11 @@ The application, named Disability App, will provide people with disabilities dif
 ## Target Users
 
 - People with disabilities who need practical support with everyday activities.
+
+## Branding
+
+- The app is named Stability. The name appears prominently in the header brand mark at the top of the app (and in the browser tab title) so it is clearly visible as soon as the app loads.
+- The small tagline text shown under the "Stability" brand name, and used alongside the name in the browser tab title, reads "your disability assistant".
 
 ## Navigation And Organization
 
@@ -50,6 +55,9 @@ The app will initially support needs associated with these categories:
 - Routine reminders repeat daily at the selected time while the app is open.
 - The app requests browser notification permission when a reminder is saved and shows an in-app notification when the reminder is due.
 - Due reminders play an in-app alarm sound instead of relying on the default system notification sound.
+- The alarm also vibrates the device (on phones that support vibration) alongside the sound, so a reminder is still noticeable if the phone is on silent or if audio playback is blocked.
+- The alarm reuses a single, shared audio player unlocked by the user's first tap in the app, rather than creating a new one per beep, so alarm sound is not silently blocked by mobile browsers' autoplay restrictions.
+- If a reminder's due time passes while the app is in the background, the screen is locked, or the browser tab was suspended, the alarm still fires as soon as the app becomes visible again (or is reopened) on the same day, instead of only relying on a background timer that phones can delay or drop.
 - The alarm repeats every few seconds and shows a dismiss banner until the user dismisses it or a safety timeout is reached, so a reminder is not missed after only a few beeps.
 
 #### Medication Tracker
@@ -60,6 +68,8 @@ The app will initially support needs associated with these categories:
 - Medication reminders repeat daily at the selected time while the app is open.
 - The app requests browser notification permission when a reminder is saved and shows an in-app notification when the reminder is due.
 - Due medication reminders play an in-app alarm sound instead of relying on the default system notification sound.
+- The alarm also vibrates the device (on phones that support vibration) alongside the sound, so a reminder is still noticeable if the phone is on silent or if audio playback is blocked.
+- If a reminder's due time passes while the app is in the background, the screen is locked, or the browser tab was suspended, the alarm still fires as soon as the app becomes visible again (or is reopened) on the same day, instead of only relying on a background timer that phones can delay or drop.
 - The alarm repeats every few seconds and shows a dismiss banner until the user dismisses it or a safety timeout is reached, so a reminder is not missed after only a few beeps.
 - Due medication notifications include the dose note alongside the medication name.
 - The feature is intended to help users who forget medication doses, including users with ADHD-related memory challenges.
@@ -144,6 +154,36 @@ The app will initially support needs associated with these categories:
 - This feature is intended for broad app interactions and is separate from the dedicated speech support functionality in the speech mode section.
 - The exact supported commands, microphone accessibility, and activation behaviors are to be defined.
 
+#### Motor Games
+
+- The app will provide games designed to exercise motor speed and coordination, in the same one-tool-card format used by the Cognitive Skills Games.
+- Motor Games provides two separate game buttons, matching the Cognitive Skills Games selector pattern: Whack-a-mole and Precision drawing. Only the game selected by the player is displayed, and the player can switch between the two games by selecting the other button.
+- The first game is a whack-a-mole game with no fixed holes: the mole can appear anywhere on the game board rather than only in predefined spots.
+- The game has ten levels, and each level lasts 30 seconds.
+- After each level, moles stay visible for less time than the previous level, increasing the speed and coordination challenge as the player progresses.
+- On-screen instructions explain how to play (whack moles before they disappear, missing costs a strike, and running out of strikes ends the game) so the rules are clear before starting.
+- Each level begins with a 3, 2, 1, Go! countdown before any mole appears, so the player is not caught off guard by the first mole of the level.
+- The player's cursor acts as the hammer on desktop; a distinct hammer cursor is shown while the mouse is over the game board.
+- The game also supports touchscreen devices such as phones: tapping a mole whacks it, using the same pointer-based interaction as the mouse.
+- Whacking a mole immediately ends its appearance and spawns a new mole elsewhere on the board.
+- Missing a mole (letting its timer expire without whacking it) counts as a strike. A visible strike counter tracks strikes out of a maximum of five for the entire game, and strikes carry over from one level to the next rather than resetting.
+- Reaching five strikes ends the game immediately with a Game Over outcome, regardless of which level the player is on.
+- When a level's 30 seconds end without reaching five strikes, the game briefly pauses (moles stop spawning) and shows a level-complete message with that level's mole count and the running total score, before automatically continuing to the next level.
+- The game tracks a persistent high score on the device: the total number of moles whacked across a full run (whether the run ends by completing level ten or by running out of strikes).
+- After completing level ten, or after running out of strikes, the game shows a Round Over-style summary (matching the Cognitive Skills Games end-of-round style) with the total moles whacked and a comparison to the saved high score.
+- The game board resizes responsively to the player's screen dimensions rather than using a fixed size.
+- The second game is Precision drawing: the app displays a thick, semi-transparent guide shape (a randomized scribble of straight segments between random points) for the player to study, then the player must trace over it as closely as possible with a thin pencil-style cursor within a time limit.
+- Precision drawing has six levels. Each level generates a newly randomized shape so no shape repeats between attempts.
+- Across the six levels, the study time shrinks (from 10 seconds down to 5 seconds), the draw time shrinks (from 30 seconds down to 12 seconds), the guide line gets visually thinner, and the shapes get longer (more points), increasing the difficulty as the player progresses.
+- A distinct pencil cursor is shown while the mouse is over the drawing board, and the game supports touchscreen devices: a finger tap-and-drag traces the shape using the same pointer-based interaction as the mouse.
+- A prominent, color-coded badge is shown directly on the game board, next to the shape, stating which phase is active (studying or tracing) along with a live countdown, so the current phase is always clear at a glance.
+- The player can clear their in-progress drawing and retry within the same attempt before confirming.
+- When the player presses "Confirm drawing" (or the draw timer runs out), an algorithm scores the accuracy of the traced drawing against the guide shape by comparing how much of the guide was covered and how much of the drawn line stayed on the guide, producing an accuracy percentage.
+- The player needs at least 90% accuracy to clear a level and advance; reaching 90% or higher shows a completion screen directly on the game board stating the level passed and the accuracy achieved, pausing briefly before the next level begins.
+- Falling short of 90% accuracy ends the run immediately with a Round Over-style summary showing the level reached, the final accuracy, and the number of levels cleared.
+- The game tracks a persistent high score on the device: the number of levels cleared in a run (out of six).
+- Additional motor games, difficulty tuning, and accessibility controls beyond hammer-cursor, pencil-cursor, and touch support are to be defined.
+
 ### Speech Mode
 
 #### Speech-Friendly Place Finder
@@ -163,7 +203,13 @@ The app will initially support needs associated with these categories:
 - Users can remove saved quick responses, and the response disappears from the list immediately.
 - Instead of sending a written message, the app will read the selected or typed text aloud so the user can participate in a spoken conversation.
 - The feature should support back-and-forth conversations while reducing the need for the user to speak.
-- The exact response suggestions, text-to-speech controls, conversation flow, and customization experience are to be defined.
+- The conversation board offers ten conversation voices in a single dropdown menu: five feminine voices (Feminine One through Five) and five masculine voices (Masculine One through Five).
+- A single "Test voice" button plays a short sample sentence using whichever voice is currently selected in the dropdown, so the user can preview any voice before choosing it.
+- A single "Choose voice" button sets the selected dropdown voice as the active conversation board voice, saved on the device and used whenever the board speaks typed text or a saved quick response.
+- When the dropdown selection matches the currently chosen voice, the button reads "Confirmed voice" instead of "Choose voice" to show the previewed voice is already active.
+- The user can change the chosen voice at any time, including after a voice has already been chosen, by selecting a different voice in the dropdown and choosing it.
+- The exact response suggestions, text-to-speech controls beyond voice selection, conversation flow, and customization experience are to be defined.
+
 
 #### Guided Speech Lessons
 
@@ -184,4 +230,10 @@ The app will initially support needs associated with these categories:
 - The application is a static client-side web application built with HTML, CSS, and JavaScript.
 - The web application is hosted using GitHub Pages directly from the `main` branch root folder (`/`).
 - GitHub Pages automatically serves `index.html` as the main entry point.
+
+### Known Limitations: Reminder Alarms On Phones
+
+- Because the app is a static, client-side-only site with no backend or push-notification service, reminder alarms depend on the app being open (even in a background tab) on the device; a fully closed browser tab cannot be woken up to sound an alarm.
+- Browser notifications require platform support: iOS Safari does not support web notifications from a regular browser tab, and only supports them for the app when added to the Home Screen (iOS 16.4+). This is a platform restriction outside the app's control.
+- The in-app alarm sound and vibration are the most reliable cross-platform fallback, and are designed to still fire (via a visibility-based catch-up check) as soon as the user reopens or returns to the app, even if the exact due-time timer was delayed or dropped while the phone was locked or the app was backgrounded.
 

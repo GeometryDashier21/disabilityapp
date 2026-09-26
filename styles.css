@@ -134,8 +134,28 @@ textarea { min-height: 110px; resize: vertical; }
 .touch-scale-buttons .meter { flex: 1; margin: 0; }
 .touch-scale-button { width: 64px; height: 64px; padding: 0; border: 2px solid var(--teal-dark); border-radius: 50%; color: var(--teal-dark); background: #fff; font-size: 2rem; font-weight: 700; line-height: 1; }
 .touch-scale-button:disabled { opacity: .4; border-color: var(--line); color: var(--muted); }
+.motor-game { max-width: 900px; }
+.motor-board { position: relative; width: 100%; height: clamp(220px, 52vh, 480px); margin: 18px 0; overflow: hidden; border: 2px dashed var(--line); border-radius: 8px; background: linear-gradient(135deg, #eafbf3, #fff8f2); touch-action: none; cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34'%3E%3Ctext y='27' font-size='28'%3E%F0%9F%94%A8%3C/text%3E%3C/svg%3E") 4 26, crosshair; }
+.mole { position: absolute; display: grid; place-items: center; width: 64px; height: 64px; padding: 0; border: none; border-radius: 50%; background: #d9a066; box-shadow: 0 6px 14px rgba(22, 42, 58, .28); font-size: 2.1rem; line-height: 1; transform: scale(0); opacity: 0; transition: transform .12s ease, opacity .12s ease; }
+.mole.is-visible { transform: scale(1); opacity: 1; }
+.motor-countdown { position: absolute; inset: 0; display: grid; place-items: center; color: var(--teal-dark); background: rgba(255, 253, 248, .85); font: 900 clamp(4.5rem, 18vh, 9rem) "DM Serif Display", Georgia, serif; text-shadow: 0 4px 0 rgba(22, 42, 58, .12); animation: motorCountdownPop .8s cubic-bezier(.34, 1.56, .64, 1); }
+.motor-countdown.is-go { color: var(--coral); animation-duration: .5s; }
+@keyframes motorCountdownPop { 0% { transform: scale(.3); opacity: 0; } 55% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+.draw-board { background: #fff8f2; }
+.draw-board canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30'%3E%3Ctext y='24' font-size='24'%3E%E2%9C%8F%3C/text%3E%3C/svg%3E") 2 26, crosshair; }
+.draw-phase-badge { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); padding: 8px 18px; border-radius: 999px; color: white; background: var(--muted); font-weight: 700; font-size: 1.05rem; box-shadow: 0 6px 14px rgba(22, 42, 58, .25); pointer-events: none; white-space: nowrap; }
+.draw-phase-badge:empty { display: none; }
+.draw-phase-badge.is-study { background: var(--teal-dark); }
+.draw-phase-badge.is-draw { background: var(--coral); }
+.draw-phase-badge.is-pop { animation: motorCountdownPop .5s cubic-bezier(.34, 1.56, .64, 1); }
+.draw-pass-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 20px; text-align: center; color: var(--teal-dark); background: rgba(234, 251, 243, .94); animation: motorCountdownPop .5s cubic-bezier(.34, 1.56, .64, 1); }
+.draw-pass-overlay strong { font: 900 clamp(2.1rem, 7vh, 3.4rem) "DM Serif Display", Georgia, serif; }
+.draw-pass-overlay span { color: var(--ink); font-size: clamp(1.05rem, 3vh, 1.5rem); font-weight: 700; }
 .quick-responses { display: flex; flex-wrap: wrap; gap: 9px; margin: 12px 0; }
 .quick-response { min-height: 48px; padding: 10px 14px; border: 1px solid var(--teal); border-radius: 20px; color: var(--teal-dark); background: var(--blue); font-weight: 700; }
+.voice-picker { margin-top: 6px; max-width: 460px; }
+.voice-locked-label { margin: 0 0 14px; color: var(--teal-dark); font-weight: 700; }
+#voiceChooseButton:disabled { opacity: .6; cursor: default; }
 .lesson-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 260px)); gap: 14px; margin-bottom: 22px; }
 .mouth-lesson { display: grid; grid-template-columns: 190px 1fr; gap: 24px; align-items: center; margin-bottom: 22px; padding: 22px; border: 1px solid var(--line); border-radius: 8px; background: #fff8f2; }
 .mouth-preview { display: grid; justify-items: center; gap: 12px; }
