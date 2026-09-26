@@ -16,10 +16,11 @@ The application, named Disability App, will provide people with disabilities dif
 
 ## Navigation And Organization
 
-- The app will present Cognitive Mode, Motor Mode, and Speech Mode as separate buttons.
-- Users will select the mode that matches the support they need.
-- Each mode will display its features as separate buttons.
-- Users will select an individual feature button to open and use that feature.
+- The app opens on a single splash screen with an "Open app" button; no mode, feature, or tool content is visible until the user taps it. This avoids requiring users to discover content by scrolling.
+- After opening the app, the user sees a dedicated screen with only the three mode buttons: Cognitive Mode, Motor Mode, and Speech Mode.
+- Selecting a mode navigates to a new screen showing only that mode's feature buttons (a "Back to modes" button returns to mode selection).
+- Selecting a feature navigates to a new screen showing only that feature's tool content (a "Back to tools" button returns to the feature list).
+- Each step (splash, modes, features, content) is its own full screen; only one is visible at a time, and each screen starts scrolled to the top, so users are never required to scroll to discover that a button worked.
 - The mode-and-feature button structure will keep the app organized and make available tools easier to find.
 
 ## Supported Disability Categories
@@ -73,16 +74,21 @@ The app will initially support needs associated with these categories:
 - Only the game selected by the user will be displayed, and the user can switch between the two games by selecting the other button.
 - The first game will be a number memory game that starts each round by showing a random sequence of four numbers as large, bubble-style number tiles.
 - When the user begins typing their answer, the number sequence will disappear so the user recalls it from memory.
-- A correctly completed sequence advances the next round by one number, starting at four numbers and continuing with five, six, seven, and higher.
-- An incorrect sequence resets the game to a new sequence of four numbers.
+- A correctly completed sequence advances the next round by one number, starting at four numbers and continuing with five, six, seven, and higher, with a visible "Correct!" success banner shown near the answer field.
+- An incorrect sequence ends the round immediately: the answer field locks and a Round Over card (matching the Item Recall Game Over card style) reports the score and high-score comparison. The user must press Start Game to begin a new round at four numbers.
 - The game will give clear, supportive feedback after each attempt and let the user begin a new round.
 - The next game will be an item-recall game that displays a chest containing approximately 10 varied, randomly selected items from a broad item bank.
 - The chest and its items will remain visible for 30 seconds, with a bubble-style countdown displayed beside the chest.
 - While the chest is open, the item-recall text box will remain hidden so the user cannot enter answers during the study period.
 - When the 30-second countdown ends, the chest and its items will disappear and the text box will appear for item recall.
 - The user will enter one item at a time and press Enter to submit each answer.
-- Each correctly recalled item will allow the user to enter another item, and the game will count correct answers out of 10.
+- Each correctly recalled item will allow the user to enter another item, and the game will count correct answers out of 10, with a visible "Correct!" success banner (and a warning banner for repeated guesses) shown near the answer field rather than as small text below the Start Game button.
 - If the user submits an item that is not in the chest, the round will end immediately and display a Game Over screen.
+- If the user correctly names all 10 items, the round ends immediately with a celebratory "Perfect recall!" end message instead of a Game Over screen.
+- Each game tracks a separate, persistent high score saved on the device (longest digit sequence recalled for Number Memory; most items recalled for Item Recall), shown live in the game header (e.g. "Best: 6 digits" / "Best: 8 / 10").
+- The end-of-round message always states the score and that the round ended (loss), but is framed with encouraging, varied phrasing rather than a flat "Game Over" label alone.
+- If the round's score beats the saved high score, the end message announces a new high score and states by how much the previous best was beaten.
+- If the round's score does not beat the saved high score, the end message tells the user how close they were (the gap) to their best score, and encourages another attempt.
 - The user will be able to start a new item-recall round using the Start Game button.
 - Additional game types, target skills, accessibility controls, and the boundaries of any brain-training claims are to be defined.
 
@@ -126,9 +132,9 @@ The app will initially support needs associated with these categories:
 - Motor Mode will use a larger layout and more spacious interface design for users with tremors or reduced fine motor control.
 - Buttons, controls, and interactive elements will be intentionally enlarged to improve tap accuracy and reduce accidental presses.
 - The interface will prioritize clarity, separation, and accessibility over compact layouts.
-- The Large Touch Layout screen provides a working slider (100%-160%, in 10% steps) that live-resizes every button and control across the entire app (not just Motor Mode), with a label showing the current percentage.
+- The Large Touch Layout screen provides big, easy-to-press plus and minus buttons (not a slider, since a slider is hard to operate with a motor impairment) that live-resize every button and control across the entire app (not just Motor Mode), with a label showing the current percentage. Sizing is limited to a 100%-160% range in 10% steps, and the plus/minus buttons disable at the max/min so users cannot scale beyond the limit.
 - The chosen touch target size is saved on the device and reapplied automatically the next time the app loads.
-- The required spacing rules and target-device considerations beyond the slider range are to be defined.
+- The required spacing rules and target-device considerations beyond the size range are to be defined.
 
 #### Persistent Voice Control
 
@@ -167,7 +173,7 @@ The app will initially support needs associated with these categories:
 - Selecting any word part, including parts after the first, will update the main mouth formation to match that part.
 - The mouth formation legend will identify the colors as: Red - mouth; Pink - tongue; Grey - lips.
 - The app will play example words aloud so users can hear the target pronunciation.
-- Users can choose multiple playback speeds for example words, from very slow practice through 3x speed.
+- Users can choose from five playback speeds for example words: 0.25x, 0.5x, 1x, 1.5x, 2x. Slower speeds are exaggerated (using a non-linear rate curve) so they sound meaningfully slower than 1x, rather than barely different.
 - Lessons should support step-by-step practice at a pace chosen by the user.
 - The exact mouth-formation visuals, lesson content, word library, progression, and feedback methods are to be defined.
 
