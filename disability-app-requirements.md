@@ -87,6 +87,7 @@ The app will initially support needs associated with these categories:
 - A correctly completed sequence advances the next round by one number, starting at four numbers and continuing with five, six, seven, and higher, with a visible "Correct!" success banner shown near the answer field.
 - An incorrect sequence ends the round immediately: the answer field locks and a Round Over card (matching the Item Recall Game Over card style) reports the score and high-score comparison. The user must press Start Game to begin a new round at four numbers.
 - The game will give clear, supportive feedback after each attempt and let the user begin a new round.
+- Success feedback in both cognitive skills games will use varied encouraging messages rather than repeating the same sentence after every correct answer.
 - The next game will be an item-recall game that displays a chest containing approximately 10 varied, randomly selected items from a broad item bank.
 - The chest and its items will remain visible for 30 seconds, with a bubble-style countdown displayed beside the chest.
 - While the chest is open, the item-recall text box will remain hidden so the user cannot enter answers during the study period.
@@ -112,6 +113,26 @@ The app will initially support needs associated with these categories:
 - Selecting the same mood again shows a different suggestion each time until the full pool has been shown, then the pool reshuffles.
 - The feature should be supportive, not critical, and should allow the user to choose their own pace.
 - The exact interval options, mood categories, exercise library, and response logic are to be defined.
+
+#### Mindfulness Practice
+
+- Cognitive Mode will provide a mindfulness practice tool with selectable practice lengths from 1 to 30 minutes.
+- Users will be able to choose guided breathing, body scan, or sensory focus exercises.
+- Guided breathing will provide an adjustable pace of 3, 4, 5, 6, or 8 seconds for each inhale and exhale, shown once beside the Breath length title.
+- The tool will show an exercise-related calming animation while practice is running.
+- Each exercise will use a substantially different visual form and movement so the exercises are easy to distinguish.
+- Sensory Focus will display a randomized set of 7 to 13 objects; each object will have its own movement speed, path, delay, and size-pulse behavior.
+- Practice length will be adjustable to any whole-minute value from 1 to 30 using plus and minus controls.
+- Breath length will be adjustable to any whole-second value from 3 to 8 using plus and minus controls, and the control will only appear for Guided Breathing.
+- The current timer and exercise instruction will appear together inside the animation stage.
+- Completing a practice will show a positive celebration animation before the user resets or starts again.
+- Guided Breathing will round the requested practice duration up to the next complete inhale/exhale cycle so the timer always ends after an exhale.
+- Practice completion will ease through a brief settling phase after the final exhale before showing the celebration animation.
+- At `00:00`, the breathing instruction and timer text will disappear while the circle holds at its smallest exhale size.
+- The smallest circle will cross-fade into the Practice Complete screen rather than disappearing abruptly.
+- Users will be able to start, pause, resume, and reset a practice at any time.
+- The timer and phase guidance will be visible and announced through an accessible live status.
+- The tool is a supportive practice aid and does not make medical or mental-health treatment claims.
 
 ### Motor Mode
 
