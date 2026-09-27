@@ -18,6 +18,8 @@ The application, named Stability, will provide people with disabilities differen
 
 - The app is named Stability. The name appears prominently in the header brand mark at the top of the app (and in the browser tab title) so it is clearly visible as soon as the app loads.
 - The small tagline text shown under the "Stability" brand name, and used alongside the name in the browser tab title, reads "your disability assistant".
+- On the splash screen, "Stability" is shown again as a large, centered headline in the middle of the page (distinct from the smaller header brand mark), with the "A calmer way through the day" tagline displayed beneath it in a larger, bolded style so it reads as the app's slogan/catchphrase.
+- Below the "Open app" button, the splash screen shows a short "Three modes, one app" section with one card per mode (Cognitive, Motor, Speech), each giving a brief, plain-language description of who the mode is for and the kinds of tools it includes, so a new user understands what each mode offers before opening the app.
 
 ## Navigation And Organization
 
@@ -42,10 +44,9 @@ The app will initially support needs associated with these categories:
 
 #### Mental And Cognitive Accessibility Indicator
 
-- The app will provide an accessibility indicator for places based on how supportive they are for people with mental or cognitive disabilities.
-- The indicator will communicate accessibility in a simple, recognizable visual format inspired by the familiar blue wheelchair access sign.
-- The indicator will describe mental and cognitive accessibility rather than physical accessibility.
-- The criteria used to assign the indicator, including which place characteristics qualify as accessible, are to be defined.
+- The app will help users find nearby places that tend to be calmer and easier to navigate for people with mental or cognitive disabilities, using the shared nearby-place finder described below.
+- Each result includes a short cognitive-accessibility note (e.g. what to check for, such as quieter hours or clearer signage) rather than only a place name and rating.
+- The criteria used to judge cognitive/mental accessibility beyond the search note are to be defined.
 
 #### Daily Routine Reminders
 
@@ -153,10 +154,9 @@ The app will initially support needs associated with these categories:
 
 #### Physical Accessibility Indicator
 
-- The app will provide an accessibility indicator for places based on how physically supportive they are for users with motor impairments.
-- The indicator will use a familiar visual style similar to the standard blue wheelchair access sign.
-- The indicator will represent physical accessibility rather than mental or cognitive accessibility.
-- The criteria used to assign the indicator, including accessibility features such as ramps, wide paths, seating options, and suitable layouts, are to be defined.
+- The app will help users find nearby places and check which ones report a wheelchair-accessible entrance, using the shared nearby-place finder described below.
+- Each result shows Google's reported wheelchair-accessible-entrance status (accessible, not accessible, or not reported) as its accessibility note.
+- Additional accessibility features beyond entrance accessibility (ramps, wide paths, seating, layout) are to be defined and are not currently sourced from Google Places.
 
 #### Large Touch Targets And Expanded Layout
 
@@ -173,7 +173,11 @@ The app will initially support needs associated with these categories:
 - The voice-control feature is designed for users with shaky or uncontrollable limbs who may not be able to interact with the interface through touch alone.
 - Users will be able to speak commands to trigger core actions without relying on small or precise gestures.
 - This feature is intended for broad app interactions and is separate from the dedicated speech support functionality in the speech mode section.
-- The exact supported commands, microphone accessibility, and activation behaviors are to be defined.
+- Tapping the voice button starts listening for a single spoken command using the browser's built-in speech recognition; tapping it again while listening stops it.
+- Every time the user taps the voice button (and the browser/context checks pass), the app shows a reminder to allow microphone access for the site if the browser asks, alongside the supported commands, since a blocked or ignored permission prompt is the most common reason voice control silently fails.
+- Supported commands currently open a mode by saying its name: "cognitive mode", "motor mode", or "speech mode".
+- If the microphone is blocked, no speech is heard, or a command is not recognized, the app shows a specific, plain-language toast explaining what happened and what to do next, instead of failing silently.
+- Additional supported commands beyond opening a mode are to be defined.
 
 #### Motor Games
 
@@ -209,9 +213,8 @@ The app will initially support needs associated with these categories:
 
 #### Speech-Friendly Place Finder
 
-- The app will help users find places that are easier to use for people with speech impediments.
-- Results will focus on places where users can access services, communicate, and complete everyday tasks without speech being an unnecessary barrier.
-- The accessibility criteria, place information, search behavior, and methods for verifying speech-friendly environments are to be defined.
+- The app will help users find nearby places, using the shared nearby-place finder described below, with a note encouraging the user to look for a website, menu, or online ordering they can use instead of speaking.
+- The exact criteria for verifying a speech-friendly environment beyond this note are to be defined.
 
 #### Text-To-Speech Conversation Board
 
@@ -246,6 +249,16 @@ The app will initially support needs associated with these categories:
 
 ## Technical Considerations
 
+### Shared Nearby-Place Finder (Cognitive, Physical, Speech Modes)
+
+- The Mental Access Finder, Physical Access Finder, and Speech-Friendly Place Finder are three mode-specific views of the same underlying tool: they all search for nearby places using the user's device location and the Google Places API, and only differ in search placeholder text and the wording of each result's accessibility note.
+- The user enters an optional search term (e.g. "library", "pharmacy"); if left blank, a mode-specific default search term is used.
+- The app requests the browser's location permission and searches within roughly 8 km of the user's current location.
+- Each result shows the place name, address, open-now status (when available), star rating, and a mode-specific accessibility note.
+- The Physical Access Finder additionally looks up and displays Google's reported wheelchair-accessible-entrance status per result.
+- This feature requires a Google Cloud API key with the Places API enabled, configured in `app.js` (`GOOGLE_MAPS_API_KEY`). Until a real key is added, the finder shows a clear setup message instead of results.
+- If location access is denied, the browser does not support geolocation, or no results are found, the finder shows a plain-language error message explaining what went wrong.
+
 ### Deployment & Hosting
 
 - The application is a static client-side web application built with HTML, CSS, and JavaScript.
@@ -257,4 +270,11 @@ The app will initially support needs associated with these categories:
 - Because the app is a static, client-side-only site with no backend or push-notification service, reminder alarms depend on the app being open (even in a background tab) on the device; a fully closed browser tab cannot be woken up to sound an alarm.
 - Browser notifications require platform support: iOS Safari does not support web notifications from a regular browser tab, and only supports them for the app when added to the Home Screen (iOS 16.4+). This is a platform restriction outside the app's control.
 - The in-app alarm sound and vibration are the most reliable cross-platform fallback, and are designed to still fire (via a visibility-based catch-up check) as soon as the user reopens or returns to the app, even if the exact due-time timer was delayed or dropped while the phone was locked or the app was backgrounded.
+
+### Known Limitations: Voice Control
+
+- Voice control depends on the browser's built-in speech recognition (`SpeechRecognition` / `webkitSpeechRecognition`), which is not a web standard supported everywhere.
+- Safari on iPhone and iPad does not support this API at all (no browser on iOS does, since they all use Apple's WebKit engine), so voice control cannot work there; the app detects this and shows a clear message instead of failing silently.
+- Microphone access (and therefore voice control) only works when the app is served over `https://` or `localhost`. It will not work when `index.html` is opened directly from a local file, which the app also detects and reports.
+- Chrome, Edge, and other Chromium-based browsers on desktop and Android currently have the best support.
 
